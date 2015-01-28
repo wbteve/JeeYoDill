@@ -6,9 +6,8 @@ extern "C" {
 #endif
 
 
-void on_surface_created();
-void on_surface_changed();
-void on_draw_frame();
+void renderFrame();
+void setupGraphics(int w, int h);
 
 
 #ifdef __cplusplus
