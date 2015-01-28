@@ -17,7 +17,7 @@ static const char gVertexShader[] =
 static const char gFragmentShader[] =
     "precision mediump float;\n"
     "void main() {\n"
-    "  gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0);\n"
+    "  gl_FragColor = vec4(1.0, 0.26, 0.26, 1.0);\n"
     "}\n";
 
 GLuint loadShader(GLenum shaderType, const char* pSource) {
@@ -90,33 +90,28 @@ GLuint gProgram;
 GLuint gvPositionHandle;
 
 void setupGraphics(int w, int h) {
-    printGLString("Version", GL_VERSION);
-    printGLString("Vendor", GL_VENDOR);
-    printGLString("Renderer", GL_RENDERER);
-    printGLString("Extensions", GL_EXTENSIONS);
-
     LOGI("setupGraphics(%d, %d)", w, h);
+
     gProgram = createProgram(gVertexShader, gFragmentShader);
     if (!gProgram) {
         LOGE("Could not create program.");
         return;
     }
 
-
     gvPositionHandle = glGetAttribLocation(gProgram, "vPosition");
     checkGlError("glGetAttribLocation");
+
     LOGI("glGetAttribLocation(\"vPosition\") = %d\n",
             gvPositionHandle);
 
-
     glViewport(0, 0, w, h);
     checkGlError("glViewport");
-    return;
 }
 
 void renderFrame() {
-    GLfloat gTriangleVertices[] = { 0.0f, 0.5f, -0.5f, -0.5f,
-            0.5f, -0.5f };
+    GLfloat gTriangleVertices[] = {0.0f, 0.5f, 0.0f,
+                                    -0.5f, -0.5f, 0.0f,
+                                    0.5f, -0.5f, 0.0f};
 
     glClearColor(0.4f, 0.4f, 0.4f, 1.0f);
     checkGlError("glClearColor");
@@ -127,7 +122,7 @@ void renderFrame() {
     glUseProgram(gProgram);
     checkGlError("glUseProgram");
 
-    glVertexAttribPointer(gvPositionHandle, 2, GL_FLOAT, GL_FALSE, 0, gTriangleVertices);
+    glVertexAttribPointer(gvPositionHandle, 3, GL_FLOAT, GL_FALSE, 0, gTriangleVertices);
     checkGlError("glVertexAttribPointer");
 
     glEnableVertexAttribArray(gvPositionHandle);
