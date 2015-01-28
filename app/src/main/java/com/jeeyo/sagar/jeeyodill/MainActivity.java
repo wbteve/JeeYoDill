@@ -1,5 +1,6 @@
 package com.jeeyo.sagar.jeeyodill;
 
+import android.opengl.GLSurfaceView;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.view.Menu;
@@ -8,22 +9,39 @@ import android.widget.TextView;
 
 
 public class MainActivity extends ActionBarActivity {
-    static {
-        System.loadLibrary("streamplot");
-    }
 
     private native void printLogHelloString();
     private native String getHelloString();
 
+    static {
+        System.loadLibrary("streamplot");
+    }
+
+    private GLSurfaceView mGLSurfaceView;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-        TextView textView = (TextView) findViewById(R.id.text_hello);
-        textView.setText(getHelloString());
-        printLogHelloString();
+
+        mGLSurfaceView = new GLSurfaceView(this);
+        setContentView(mGLSurfaceView);
+        mGLSurfaceView.setEGLContextClientVersion(2);
+        mGLSurfaceView.setRenderer(new RendererWrapper());
+        setContentView(mGLSurfaceView);
     }
 
+    @Override
+    protected void onPause() {
+        super.onPause();
+        mGLSurfaceView.onPause();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        mGLSurfaceView.onResume();
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
