@@ -10,15 +10,7 @@ import android.widget.TextView;
 
 public class MainActivity extends ActionBarActivity {
 
-    private native void printLogHelloString();
-    private native String getHelloString();
-
-    static {
-        System.loadLibrary("streamplot");
-    }
-
     private GLSurfaceView mGLSurfaceView;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

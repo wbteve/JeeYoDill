@@ -1,15 +1,15 @@
-#include <jni.h>
-#include <string.h>
-#include <android/log.h>
+#include <GLES2/gl2.h>
 
-#define DEBUG_TAG "NDKSetupActivity"
+#include "streamplot.h"
 
-JNIEXPORT void JNICALL
-Java_com_jeeyo_sagar_jeeyodill_MainActivity_printLogHelloString(JNIEnv *env, jobject this) {
-    __android_log_print(ANDROID_LOG_ERROR, DEBUG_TAG, "NDK: %s", "Hi logcat from native!");
+void on_surface_created() {
+    glClearColor(1.0f, 0.0f, 0.0f, 0.0f);
 }
 
-JNIEXPORT jstring JNICALL
-Java_com_jeeyo_sagar_jeeyodill_MainActivity_getHelloString(JNIEnv *env, jobject this) {
-    return (*env)->NewStringUTF(env, "Hello world from NDK in C!");
+void on_surface_changed() {
+    // No-op
+}
+
+void on_draw_frame() {
+    glClear(GL_COLOR_BUFFER_BIT);
 }
