@@ -38,23 +38,23 @@ public class MainActivity extends Activity {
     private boolean mBleInitStatus = false;
     private GLSurfaceView mGLSurfaceView;
     private BluetoothAdapter mBluetoothAdapter;
-    private BluetoothDevice mDevice;
+    private BluetoothDevice mDevice = null;
     private BluetoothGatt mGatt = null;
 
     BluetoothAdapter.LeScanCallback mLeScanCallback = new BluetoothAdapter.LeScanCallback() {
         @Override
         public void onLeScan(final BluetoothDevice device, int rssi, byte[] scanRecord) {
-            Log.v(TAG, "New device: " + device.getName());
-            if(device.getName().equals(BLE_DEVICE_NAME)) {
-                mDevice = device;
-                Log.v(TAG, "Found required device");
-                mBluetoothAdapter.stopLeScan(mLeScanCallback);
-                mGatt = mDevice.connectGatt(getApplicationContext(), false, btleGattCallback);
-                Log.v(TAG, "Connecting to the device");
+            if(mDevice == null) {
+                Log.v(TAG, "New device: " + device.getName());
+                if (device.getName().equals(BLE_DEVICE_NAME)) {
+                    mDevice = device;
+                    Log.v(TAG, "Found required device");
+                    mBluetoothAdapter.stopLeScan(mLeScanCallback);
+                    mGatt = mDevice.connectGatt(getApplicationContext(), false, btleGattCallback);
+                    Log.v(TAG, "Connecting to the device");
+                }
             }
         }
-
-
     };
 
     private final BluetoothGattCallback btleGattCallback = new BluetoothGattCallback() {
@@ -74,6 +74,10 @@ public class MainActivity extends Activity {
             // this will get called when a device connects or disconnects
             if(newState == BluetoothAdapter.STATE_DISCONNECTED) {
                 Log.v(TAG, "BLE device disconnected.");
+                mDevice = null;
+                if(mGatt != null)
+                    mGatt.close();
+                mGatt = null;
                 if(mBleInitStatus) {
                     // App is still alive. Search for BLE devices again.
                     mBleInitStatus = false;
@@ -148,7 +152,6 @@ public class MainActivity extends Activity {
         if(mGatt != null) {
             Log.v(TAG, "Disconnecting from GATT");
             mGatt.disconnect();
-            mGatt = null;
         }
     }
 
