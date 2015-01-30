@@ -35,8 +35,10 @@ public class MainActivity extends Activity {
     public static final UUID SIMPLEPROFILE_CHAR5 = UUID.fromString("0000fff5-0000-1000-8000-00805f9b34fb");
     private static final UUID CONFIG_DESCRIPTOR = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
 
-    private boolean mBleInitStatus = false;
+    private RendererWrapper mRendererWrapper;
     private GLSurfaceView mGLSurfaceView;
+
+    private boolean mBleInitStatus = false;
     private BluetoothAdapter mBluetoothAdapter;
     private BluetoothDevice mDevice = null;
     private BluetoothGatt mGatt = null;
@@ -61,12 +63,13 @@ public class MainActivity extends Activity {
 
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic) {
-            Log.e(TAG, "Changeed-Length: " + characteristic.getValue().length);
+            //Log.e(TAG, "Changed-Length: " + characteristic.getValue().length);
             int[] data = new int[8];
             for(int i = 0; i < 8; i++) {
                 data[i] = ((characteristic.getValue()[2*i+1] & 0xFF) << 8) | (characteristic.getValue()[2*i] & 0xFF);
+                mRendererWrapper.addDataPoint(data[i]);
             }
-            Log.e(TAG, "Changed-data: " + Arrays.toString(data));
+            //Log.e(TAG, "Changed-data: " + Arrays.toString(data));
         }
 
         @Override
@@ -86,6 +89,7 @@ public class MainActivity extends Activity {
             }
             if(newState == BluetoothAdapter.STATE_CONNECTED) {
                 Log.v(TAG, "Connected to BLE device.");
+                gatt.discoverServices();
             }
         }
 
@@ -115,7 +119,8 @@ public class MainActivity extends Activity {
         setSystemUiVisilityMode();
         mGLSurfaceView = new GLSurfaceView(this);
         mGLSurfaceView.setEGLContextClientVersion(2);
-        mGLSurfaceView.setRenderer(new RendererWrapper());
+        mRendererWrapper = new RendererWrapper();
+        mGLSurfaceView.setRenderer(mRendererWrapper);
         setContentView(mGLSurfaceView);
 
         BLEInit();

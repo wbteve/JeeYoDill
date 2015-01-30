@@ -2,6 +2,11 @@
 #include "streamplot.h"
 
 JNIEXPORT void JNICALL
+Java_com_jeeyo_sagar_jeeyodill_StreamplotJNIWrapper_add(JNIEnv* env, jclass this, jint val) {
+    addDataPoint(val);
+}
+
+JNIEXPORT void JNICALL
 Java_com_jeeyo_sagar_jeeyodill_StreamplotJNIWrapper_on_1surface_1created(JNIEnv *env, jclass this) {
 
 }

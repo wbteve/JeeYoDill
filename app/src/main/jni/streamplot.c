@@ -132,3 +132,7 @@ void renderFrame() {
     checkGlError("glDrawArrays");
 }
 
+void addDataPoint(int val) {
+    LOGI("new-val: %d", val);
+}
+

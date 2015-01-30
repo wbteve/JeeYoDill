@@ -10,7 +10,6 @@ extern "C" {
 #endif
 
 
-
 #define  LOG_TAG    "libgl2jni"
 #define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
 #define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
@@ -18,6 +17,7 @@ extern "C" {
 void printGLString(const char *name, GLenum s);
 void checkGlError(const char* op);
 
+JNIEXPORT void JNICALL Java_com_jeeyo_sagar_jeeyodill_StreamplotJNIWrapper_add(JNIEnv*, jclass, jint v);
 
 /*
  * Class:     com_jeeyo_sagar_jeeyodill_StreamplotJNIWrapper
