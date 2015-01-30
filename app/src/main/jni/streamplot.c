@@ -109,10 +109,17 @@ void setupGraphics(int w, int h) {
 }
 
 void renderFrame() {
-    GLfloat gLineEnds[] = { 0.0f, 0.5f,
-                            0.0f, -0.5f,
-                            -0.5f, -0.5f,
-                            0.5f, 0.5f};
+    int N = 1600; // Number of data points
+    GLfloat gLineEnds[2*(2*N)]; // 2*N lines, and 2*(2*N) line endings
+    int i;
+    for(i = 0;i < N; i++) {
+        int p = 4*i;
+        gLineEnds[p] = -1.0f + (i * 2.0f) / N;
+        gLineEnds[p+1] = (3*i % N) * 1.0f / N;
+
+        gLineEnds[p+2] = -1.0f + ((i+1) * 2.0f) / N;
+        gLineEnds[p+3] = (3*(i+1) % N) * 1.0f / N;
+    }
 
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     checkGlError("glClearColor");
@@ -132,7 +139,7 @@ void renderFrame() {
     glEnableVertexAttribArray(gvPositionHandle);
     checkGlError("glEnableVertexAttribArray");
 
-    glDrawArrays(GL_LINES, 0, 4);
+    glDrawArrays(GL_LINES, 0, 2*N);
     checkGlError("glDrawArrays");
 }
 
