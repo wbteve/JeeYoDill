@@ -13,11 +13,18 @@ int ptr = 0; // pointer to line
 int lastYval = 0;
 #define Nmax 10000
 GLfloat gLineEnds[2*(2*Nmax)]; // 2*N lines, and 2*(2*N) line endings
+GLfloat gMVPMatrix[16] = {
+    1.0f, 0.0f, 0.0f, 0.0f,
+    0.0f, 5.0f, 0.0f, 0.0f,
+    0.0f, 0.0f, 1.0f, 0.0f,
+    0.0f, 0.0f, 0.0f, 1.0f
+};
 
 static const char gVertexShader[] =
+    "uniform mat4 u_MVPMatrix;\n"
     "attribute vec4 vPosition;\n"
     "void main() {\n"
-    "  gl_Position = vPosition;\n"
+    "  gl_Position = u_MVPMatrix * vPosition;\n"
     "}\n";
 
 static const char gFragmentShader[] =
@@ -27,7 +34,8 @@ static const char gFragmentShader[] =
     "}\n";
 
 GLuint gProgram;
-GLuint gvPositionHandle;
+GLuint gLineHandle;
+GLuint gMVPHandle;
 
 GLuint loadShader(GLenum shaderType, const char* pSource) {
     GLuint shader = glCreateShader(shaderType);
@@ -104,11 +112,14 @@ void setupGraphics(int w, int h) {
         return;
     }
 
-    gvPositionHandle = glGetAttribLocation(gProgram, "vPosition");
+    gLineHandle = glGetAttribLocation(gProgram, "vPosition");
     checkGlError("glGetAttribLocation");
 
+    gMVPHandle = glGetUniformLocation(gProgram, "u_MVPMatrix");
+    checkGlError("glGetUniformLocation");
+
     LOGI("glGetAttribLocation(\"vPosition\") = %d\n",
-            gvPositionHandle);
+            gLineHandle);
 
     glViewport(0, 0, w, h);
     checkGlError("glViewport");
@@ -151,11 +162,14 @@ void renderFrame() {
     glUseProgram(gProgram);
     checkGlError("glUseProgram");
 
-    glVertexAttribPointer(gvPositionHandle, 2, GL_FLOAT, GL_FALSE, 0, gLineEnds);
+    glVertexAttribPointer(gLineHandle, 2, GL_FLOAT, GL_FALSE, 0, gLineEnds);
     checkGlError("glVertexAttribPointer");
 
-    glEnableVertexAttribArray(gvPositionHandle);
+    glEnableVertexAttribArray(gLineHandle);
     checkGlError("glEnableVertexAttribArray");
+
+    glUniformMatrix4fv(gMVPHandle, 1, GL_FALSE, gMVPMatrix);
+    checkGlError("glUniformMatrix4fv");
 
     glDrawArrays(GL_LINES, 0, 2*N);
     checkGlError("glDrawArrays");
