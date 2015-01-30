@@ -8,6 +8,12 @@
 #include <stdlib.h>
 #include <math.h>
 
+int N = 1600; // Number of data points
+int ptr = 0; // pointer to line
+int lastYval = 0;
+#define Nmax 10000
+GLfloat gLineEnds[2*(2*Nmax)]; // 2*N lines, and 2*(2*N) line endings
+
 static const char gVertexShader[] =
     "attribute vec4 vPosition;\n"
     "void main() {\n"
@@ -19,6 +25,9 @@ static const char gFragmentShader[] =
     "void main() {\n"
     "  gl_FragColor = vec4(1.0, 0.26, 0.26, 1.0);\n"
     "}\n";
+
+GLuint gProgram;
+GLuint gvPositionHandle;
 
 GLuint loadShader(GLenum shaderType, const char* pSource) {
     GLuint shader = glCreateShader(shaderType);
@@ -86,9 +95,6 @@ GLuint createProgram(const char* pVertexSource, const char* pFragmentSource) {
     return program;
 }
 
-GLuint gProgram;
-GLuint gvPositionHandle;
-
 void setupGraphics(int w, int h) {
     LOGI("setupGraphics(%d, %d)", w, h);
 
@@ -106,21 +112,33 @@ void setupGraphics(int w, int h) {
 
     glViewport(0, 0, w, h);
     checkGlError("glViewport");
+
+    int i;
+    for(i = 0;i < N;i++) {
+        gLineEnds[4*i] = -1.0f + (i * 2.0f) / N;
+        gLineEnds[4*i + 2] = -1.0f + ((i+1) * 2.0f) / N;
+    }
 }
 
-void renderFrame() {
-    int N = 1600; // Number of data points
-    GLfloat gLineEnds[2*(2*N)]; // 2*N lines, and 2*(2*N) line endings
-    int i;
-    for(i = 0;i < N; i++) {
-        int p = 4*i;
-        gLineEnds[p] = -1.0f + (i * 2.0f) / N;
-        gLineEnds[p+1] = (3*i % N) * 1.0f / N;
 
-        gLineEnds[p+2] = -1.0f + ((i+1) * 2.0f) / N;
-        gLineEnds[p+3] = (3*(i+1) % N) * 1.0f / N;
+
+void addDataPoint(int val) {
+    //LOGI("new-val: %d", val);
+    int max = 2*(2*N);
+
+    // ptr is pointing to t0 in [(t0, y0), (t1, y1)]
+    gLineEnds[ptr+1] = lastYval * 1.0f / 1024;
+    gLineEnds[ptr+3] = val * 1.0f / 1024;
+
+    lastYval = val;
+    ptr = ptr + 4;
+    if(ptr >= max) {
+        ptr = ptr - max;
     }
+}
 
+
+void renderFrame() {
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     checkGlError("glClearColor");
 
@@ -143,7 +161,4 @@ void renderFrame() {
     checkGlError("glDrawArrays");
 }
 
-void addDataPoint(int val) {
-    LOGI("new-val: %d", val);
-}
 

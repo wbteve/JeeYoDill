@@ -27,14 +27,22 @@ public class RendererWrapper implements GLSurfaceView.Renderer {
         StreamplotJNIWrapper.on_surface_changed(width, height);
     }
 
+    int mI;
+
     @Override
     public void onDrawFrame(GL10 gl) {
+        /*
         while(true) {
             Integer d = mQueue.poll();
             if(d == null) {
                 break;
             }
             StreamplotJNIWrapper.add(d);
+        }
+        */
+        for(int i = 0; i < 6; i++) {
+            mI = (mI + 1) % 253;
+            StreamplotJNIWrapper.add(mI);
         }
         StreamplotJNIWrapper.on_draw_frame();
     }
