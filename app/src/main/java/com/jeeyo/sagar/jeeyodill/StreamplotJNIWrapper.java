@@ -14,4 +14,5 @@ public class StreamplotJNIWrapper {
     public static native void on_draw_frame();
 
     public static native void add(float data);
+
 }

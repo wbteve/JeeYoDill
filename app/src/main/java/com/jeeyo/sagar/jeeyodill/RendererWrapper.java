@@ -15,6 +15,8 @@ import javax.microedition.khronos.opengles.GL10;
  */
 public class RendererWrapper implements GLSurfaceView.Renderer {
 
+    public boolean allowNewVals = true;
+
     ConcurrentLinkedQueue<Integer> mQueue = new ConcurrentLinkedQueue<>();
 
     @Override
@@ -44,7 +46,8 @@ public class RendererWrapper implements GLSurfaceView.Renderer {
         */
         for(int i = 0; i < 6; i++) {
             mI = (mI + 1) % 253;
-            StreamplotJNIWrapper.add(amp*mI);
+            if(allowNewVals)
+                StreamplotJNIWrapper.add(amp*mI);
             if(mI == 0 && amp > 0.11) {
                 amp = amp + 0.1f;
             }

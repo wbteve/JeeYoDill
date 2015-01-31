@@ -10,7 +10,7 @@
 
 #define Nmax 10000
 #define EPS 1e-6
-#define SCALE_HI_THRESH 0.8
+#define SCALE_HI_THRESH 0.9
 #define SCALE_LO_THRESH 0.2
 
 int N = 1600; // Number of data points
@@ -136,8 +136,6 @@ void setupGraphics(int w, int h) {
         gLineEnds[4*i + 2] = -1.0f + ((i+1) * 2.0f) / N;
     }
 }
-
-
 
 void addDataPoint(float val) {
     //LOGI("new-val: %d", val);

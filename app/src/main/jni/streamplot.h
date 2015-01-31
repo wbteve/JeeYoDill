@@ -10,7 +10,6 @@ void renderFrame();
 void setupGraphics(int w, int h);
 void addDataPoint(float val);
 
-
 #ifdef __cplusplus
 }
 #endif
