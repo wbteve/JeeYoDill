@@ -17,7 +17,7 @@ extern "C" {
 void printGLString(const char *name, GLenum s);
 void checkGlError(const char* op);
 
-JNIEXPORT void JNICALL Java_com_jeeyo_sagar_jeeyodill_StreamplotJNIWrapper_add(JNIEnv*, jclass, jint v);
+JNIEXPORT void JNICALL Java_com_jeeyo_sagar_jeeyodill_StreamplotJNIWrapper_add(JNIEnv*, jclass, jfloat v);
 
 /*
  * Class:     com_jeeyo_sagar_jeeyodill_StreamplotJNIWrapper

@@ -8,7 +8,7 @@ extern "C" {
 
 void renderFrame();
 void setupGraphics(int w, int h);
-void addDataPoint(int val);
+void addDataPoint(float val);
 
 
 #ifdef __cplusplus

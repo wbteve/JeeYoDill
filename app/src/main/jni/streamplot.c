@@ -8,10 +8,15 @@
 #include <stdlib.h>
 #include <math.h>
 
+#define Nmax 10000
+#define EPS 1e-6
+#define SCALE_HI_THRESH 0.8
+#define SCALE_LO_THRESH 0.2
+
 int N = 1600; // Number of data points
 int ptr = 0; // pointer to line
-int lastYval = 0;
-#define Nmax 10000
+float lastYval = 0;
+
 GLfloat gLineEnds[2*(2*Nmax)]; // 2*N lines, and 2*(2*N) line endings
 GLfloat gMVPMatrix[16] = {
     1.0f, 0.0f, 0.0f, 0.0f,
@@ -19,6 +24,7 @@ GLfloat gMVPMatrix[16] = {
     0.0f, 0.0f, 1.0f, 0.0f,
     0.0f, 0.0f, 0.0f, 1.0f
 };
+float scaleY = 1.0f;
 
 static const char gVertexShader[] =
     "uniform mat4 u_MVPMatrix;\n"
@@ -133,13 +139,13 @@ void setupGraphics(int w, int h) {
 
 
 
-void addDataPoint(int val) {
+void addDataPoint(float val) {
     //LOGI("new-val: %d", val);
     int max = 2*(2*N);
 
     // ptr is pointing to t0 in [(t0, y0), (t1, y1)]
-    gLineEnds[ptr+1] = lastYval * 1.0f / 1024;
-    gLineEnds[ptr+3] = val * 1.0f / 1024;
+    gLineEnds[ptr+1] = lastYval;
+    gLineEnds[ptr+3] = val;
 
     lastYval = val;
     ptr = ptr + 4;
@@ -148,8 +154,33 @@ void addDataPoint(int val) {
     }
 }
 
+void setYScale() {
+    int i;
+    float maxVal = -INFINITY, minVal = INFINITY, val;
+    for(i = 0; i < N; i++) {
+        val = gLineEnds[4*i + 1];
+        if(val > maxVal)
+            maxVal = val;
+        if(val < minVal)
+            minVal = val;
+    }
+    maxVal = abs(maxVal);
+    minVal = abs(minVal);
+
+    float tempScaleYPlus = scaleY, tempScaleYMinus = scaleY;
+    if(((maxVal * scaleY) > SCALE_HI_THRESH) || ((maxVal * scaleY) < SCALE_LO_THRESH)) {
+        tempScaleYPlus = 0.5f/(maxVal + EPS);
+    }
+    if(((minVal * scaleY) > SCALE_HI_THRESH) || ((minVal * scaleY) < SCALE_LO_THRESH)) {
+        tempScaleYMinus = 0.5f/(minVal + EPS);
+    }
+    scaleY = (tempScaleYPlus < tempScaleYMinus) ? tempScaleYPlus : tempScaleYMinus;
+    gMVPMatrix[5] = scaleY;
+}
 
 void renderFrame() {
+    setYScale();
+
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     checkGlError("glClearColor");
 
