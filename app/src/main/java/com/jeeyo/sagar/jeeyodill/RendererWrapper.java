@@ -17,7 +17,7 @@ public class RendererWrapper implements GLSurfaceView.Renderer {
 
     public boolean allowNewVals = true;
 
-    ConcurrentLinkedQueue<Integer> mQueue = new ConcurrentLinkedQueue<>();
+    ConcurrentLinkedQueue<Float> mQueue = new ConcurrentLinkedQueue<>();
 
     @Override
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
@@ -29,33 +29,28 @@ public class RendererWrapper implements GLSurfaceView.Renderer {
         StreamplotJNIWrapper.on_surface_changed(width, height);
     }
 
-    int mI = 0;
-    int nI = 253;
-    float amp = 2;
-
     @Override
     public void onDrawFrame(GL10 gl) {
-        /*
         while(true) {
-            Integer d = mQueue.poll();
+            Float d = mQueue.poll();
             if(d == null) {
                 break;
             }
-            StreamplotJNIWrapper.add(d);
-        }
-        */
-        for(int i = 0; i < 6; i++) {
-            mI = (mI + 1) % 253;
             if(allowNewVals)
-                StreamplotJNIWrapper.add(amp*mI);
-            if(mI == 0 && amp > 0.11) {
-                amp = amp + 0.1f;
-            }
+                StreamplotJNIWrapper.add(d);
         }
         StreamplotJNIWrapper.on_draw_frame();
     }
 
     public void addDataPoint(int val) {
-        mQueue.add(val);
+        float v;
+        if(val < 8192 || val >= 65530) {
+            v = (float) val;
+        } else {
+            v = (float) -val;
+        }
+        if(v < 65530) {
+            mQueue.add(v);
+        }
     }
 }

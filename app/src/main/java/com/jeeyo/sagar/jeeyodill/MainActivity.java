@@ -126,7 +126,7 @@ public class MainActivity extends Activity {
         mGLSurfaceView.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
-                if(event.getAction() == MotionEvent.ACTION_UP) {
+                if(event.getAction() == MotionEvent.ACTION_DOWN) {
                     mRendererWrapper.allowNewVals = !mRendererWrapper.allowNewVals;
                 }
                 return true;
@@ -160,6 +160,7 @@ public class MainActivity extends Activity {
             mBluetoothAdapter.startLeScan(mLeScanCallback);
             mBleInitStatus = true;
         }
+        mRendererWrapper.allowNewVals = true;
     }
 
     private void BLEEnd() {
