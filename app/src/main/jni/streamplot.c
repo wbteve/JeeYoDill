@@ -57,6 +57,7 @@ GLfloat gMVPMatrix[16] = {
     0.0f, 0.0f, 1.0f, 0.0f,
     0.0f, 0.0f, 0.0f, 1.0f
 };
+GLfloat gPoint[] = { -1.0f, 0.0f };
 float scaleY = 1.0f;
 float tranY = 0.0f;
 
@@ -65,6 +66,7 @@ static const char gVertexShader[] =
     "attribute vec4 vPosition;\n"
     "void main() {\n"
     "  gl_Position = u_MVPMatrix * vPosition;\n"
+    "  gl_PointSize = 20.0f;\n"
     "}\n";
 
 static const char gFragmentShader[] =
@@ -179,6 +181,9 @@ void addDataPoint(float val) {
     gLineEnds[ptr+1] = lastYval;
     gLineEnds[ptr+3] = val;
 
+    gPoint[0] = gLineEnds[ptr+2];
+    gPoint[1] = val;
+
     lastYval = val;
     ptr = ptr + 4;
     if(ptr >= max) {
@@ -238,6 +243,17 @@ void renderFrame() {
     glDrawArrays(GL_LINES, 0, 2*N);
     checkGlError("glDrawArrays");
 
+    glVertexAttribPointer(gLineHandle, 2, GL_FLOAT, GL_FALSE, 0, gPoint);
+    checkGlError("glVertexAttribPointer");
+
+    glEnableVertexAttribArray(gLineHandle);
+    checkGlError("glEnableVertexAttribArray");
+
+    glUniformMatrix4fv(gMVPHandle, 1, GL_FALSE, gMVPMatrix);
+    checkGlError("glUniformMatrix4fv");
+
+    glDrawArrays(GL_POINTS, 0, 1);
+    checkGlError("glDrawArrays");
 
 }
 

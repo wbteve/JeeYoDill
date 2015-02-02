@@ -61,7 +61,6 @@ public class RendererWrapper implements GLSurfaceView.Renderer {
     float scale = 3.0f;
     @Override
     public void onDrawFrame(GL10 gl) {
-
         while(true) {
             Float d = mQueue.poll();
             if(d == null) {
