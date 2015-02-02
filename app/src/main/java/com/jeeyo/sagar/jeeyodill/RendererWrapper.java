@@ -58,8 +58,10 @@ public class RendererWrapper implements GLSurfaceView.Renderer {
         StreamplotJNIWrapper.on_surface_changed(width, height);
     }
     int mN = 0;
+    float scale = 3.0f;
     @Override
     public void onDrawFrame(GL10 gl) {
+
         while(true) {
             Float d = mQueue.poll();
             if(d == null) {
@@ -71,8 +73,15 @@ public class RendererWrapper implements GLSurfaceView.Renderer {
         /*
         for(int i = 0; i < 6; i++) {
             if (allowNewVals)
-                StreamplotJNIWrapper.add(mN * 1.0f/500);
+                StreamplotJNIWrapper.add(mN * scale/500);
             mN = (mN + 1) % 253;
+            if(mN == 0) {
+                if(scale == 1.0f) {
+                    scale = 0.6f;
+                } else {
+                    scale = 1.0f;
+                }
+            }
         } */
         StreamplotJNIWrapper.on_draw_frame();
     }

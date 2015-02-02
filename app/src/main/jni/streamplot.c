@@ -41,8 +41,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define Nmax 10000
 #define MAX_TEXTURES 10
 #define EPS 1e-6
-#define SCALE_HI_THRESH 0.9f
-#define SCALE_LO_THRESH 0.2f
+
+#define SCALE_HI_THRESH 0.99f
+#define SCALE_LO_THRESH 0.25f
+#define SCALE_TARG_THRESH 0.75f
 
 int N = 1600; // Number of data points
 int ptr = 0; // pointer to line
@@ -57,7 +59,6 @@ GLfloat gMVPMatrix[16] = {
 };
 float scaleY = 1.0f;
 float tranY = 0.0f;
-GLuint textureHandles[MAX_TEXTURES];
 
 static const char gVertexShader[] =
     "uniform mat4 u_MVPMatrix;\n"
@@ -199,8 +200,11 @@ void setYScale() {
     float range = maxVal - minVal;
     float avg = (maxVal + minVal) / 2.0f;
 
-    if( (range*scaleY) < (2.0f * SCALE_LO_THRESH) || (range*scaleY) > (2.0f * SCALE_HI_THRESH)) {
-        scaleY = 1.0f / (range + EPS);
+    if( ((maxVal * scaleY) > SCALE_HI_THRESH) ||
+        ((minVal * scaleY) < -SCALE_HI_THRESH) ||
+        ((range*scaleY) < (2.0f * SCALE_LO_THRESH)))
+    {
+        scaleY = 2.0f * SCALE_TARG_THRESH / (range + EPS);
         tranY = -1.0f * scaleY * avg;
     }
     gMVPMatrix[5] = scaleY;
@@ -233,6 +237,8 @@ void renderFrame() {
 
     glDrawArrays(GL_LINES, 0, 2*N);
     checkGlError("glDrawArrays");
+
+
 }
 
 
