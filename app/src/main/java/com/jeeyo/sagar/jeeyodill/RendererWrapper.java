@@ -57,7 +57,7 @@ public class RendererWrapper implements GLSurfaceView.Renderer {
     public void onSurfaceChanged(GL10 gl, int width, int height) {
         StreamplotJNIWrapper.on_surface_changed(width, height);
     }
-
+    int mN = 0;
     @Override
     public void onDrawFrame(GL10 gl) {
         while(true) {
@@ -68,6 +68,12 @@ public class RendererWrapper implements GLSurfaceView.Renderer {
             if(allowNewVals)
                 StreamplotJNIWrapper.add(d);
         }
+        /*
+        for(int i = 0; i < 6; i++) {
+            if (allowNewVals)
+                StreamplotJNIWrapper.add(mN * 1.0f/500);
+            mN = (mN + 1) % 253;
+        } */
         StreamplotJNIWrapper.on_draw_frame();
     }
 

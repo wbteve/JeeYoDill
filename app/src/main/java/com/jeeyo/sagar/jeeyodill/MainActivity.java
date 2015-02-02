@@ -146,7 +146,7 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        setSystemUiVisilityMode();
+        //setSystemUiVisilityMode();
         mGLSurfaceView = new GLSurfaceView(this);
         mGLSurfaceView.setEGLContextClientVersion(2);
         mRendererWrapper = new RendererWrapper();

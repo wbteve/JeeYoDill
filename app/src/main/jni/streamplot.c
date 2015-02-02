@@ -39,9 +39,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <math.h>
 
 #define Nmax 10000
+#define MAX_TEXTURES 10
 #define EPS 1e-6
-#define SCALE_HI_THRESH 0.9
-#define SCALE_LO_THRESH 0.2
+#define SCALE_HI_THRESH 0.9f
+#define SCALE_LO_THRESH 0.2f
 
 int N = 1600; // Number of data points
 int ptr = 0; // pointer to line
@@ -50,11 +51,13 @@ float lastYval = 0;
 GLfloat gLineEnds[2*(2*Nmax)]; // 2*N lines, and 2*(2*N) line endings
 GLfloat gMVPMatrix[16] = {
     1.0f, 0.0f, 0.0f, 0.0f,
-    0.0f, 5.0f, 0.0f, 0.0f,
+    0.0f, 1.0f, 0.0f, 0.0f,
     0.0f, 0.0f, 1.0f, 0.0f,
     0.0f, 0.0f, 0.0f, 1.0f
 };
 float scaleY = 1.0f;
+float tranY = 0.0f;
+GLuint textureHandles[MAX_TEXTURES];
 
 static const char gVertexShader[] =
     "uniform mat4 u_MVPMatrix;\n"
@@ -192,18 +195,16 @@ void setYScale() {
         if(val < minVal)
             minVal = val;
     }
-    maxVal = abs(maxVal);
-    minVal = abs(minVal);
 
-    float tempScaleYPlus = scaleY, tempScaleYMinus = scaleY;
-    if(((maxVal * scaleY) > SCALE_HI_THRESH) || ((maxVal * scaleY) < SCALE_LO_THRESH)) {
-        tempScaleYPlus = 0.5f/(maxVal + EPS);
+    float range = maxVal - minVal;
+    float avg = (maxVal + minVal) / 2.0f;
+
+    if( (range*scaleY) < (2.0f * SCALE_LO_THRESH) || (range*scaleY) > (2.0f * SCALE_HI_THRESH)) {
+        scaleY = 1.0f / (range + EPS);
+        tranY = -1.0f * scaleY * avg;
     }
-    if(((minVal * scaleY) > SCALE_HI_THRESH) || ((minVal * scaleY) < SCALE_LO_THRESH)) {
-        tempScaleYMinus = 0.5f/(minVal + EPS);
-    }
-    scaleY = (tempScaleYPlus < tempScaleYMinus) ? tempScaleYPlus : tempScaleYMinus;
     gMVPMatrix[5] = scaleY;
+    gMVPMatrix[13] = tranY;
 }
 
 void renderFrame() {
