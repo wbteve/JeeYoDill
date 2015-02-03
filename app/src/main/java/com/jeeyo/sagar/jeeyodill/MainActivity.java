@@ -55,7 +55,7 @@ import java.util.UUID;
 public class MainActivity extends Activity {
 
     public static final String TAG = "BLE";
-    private static final String BLE_DEVICE_NAME = "SimpleBLEPeripheral";
+    private static final String BLE_DEVICE_NAME = "JeeYoDillPeripheral";
 
     public static final UUID SIMPLEPROFILE = UUID.fromString("0000fff0-0000-1000-8000-00805f9b34fb");
     public static final UUID SIMPLEPROFILE_CHAR1 = UUID.fromString("0000fff1-0000-1000-8000-00805f9b34fb");
