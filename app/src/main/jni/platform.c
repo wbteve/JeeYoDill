@@ -68,12 +68,18 @@ Java_com_jeeyo_sagar_jeeyodill_PlatformJNIWrapper_init(JNIEnv* env, jclass this,
 }
 
 JNIEXPORT void JNICALL
-Java_com_jeeyo_sagar_jeeyodill_PlatformJNIWrapper_mainLoop(JNIEnv* env, jclass this, jfloatArray jdata)
+Java_com_jeeyo_sagar_jeeyodill_PlatformJNIWrapper_mainLoop(JNIEnv* env, jclass this,
+                                                           jfloatArray jdata,
+                                                           jint event, jfloat evtX0, jfloat evtY0,
+                                                           jfloat evtX1, jfloat evtY1)
 {
     int nDataPoints = (*env)->GetArrayLength(env, jdata);
     jfloat* data = (*env)->GetFloatArrayElements(env, jdata, 0);
 
-    StreamplotMainLoop(nDataPoints, data);
+    StreamplotEvent evt = {
+        event, evtX0, evtY0, evtX1, evtY1
+    };
+    StreamplotMainLoop(nDataPoints, data, evt);
 
     (*env)->ReleaseFloatArrayElements(env, jdata, data, 0);
 }

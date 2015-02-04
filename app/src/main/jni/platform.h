@@ -54,7 +54,10 @@ Java_com_jeeyo_sagar_jeeyodill_PlatformJNIWrapper_init(JNIEnv* env, jclass this,
                                                        jobjectArray jPlotTypes);
 
 JNIEXPORT void JNICALL
-Java_com_jeeyo_sagar_jeeyodill_PlatformJNIWrapper_mainLoop(JNIEnv* env, jclass this, jfloatArray jdata);
+Java_com_jeeyo_sagar_jeeyodill_PlatformJNIWrapper_mainLoop(JNIEnv* env, jclass this,
+                                                           jfloatArray jdata,
+                                                           jint event, jfloat evtX0, jfloat evtY0,
+                                                           jfloat evtX1, jfloat evtY1);
 
 
 #ifdef __cplusplus

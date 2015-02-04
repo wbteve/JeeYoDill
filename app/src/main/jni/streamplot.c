@@ -40,6 +40,9 @@ typedef struct Streamplot {
     GLfloat data[4*STREAMPLOT_N_MAX_POINTS];
 } Streamplot;
 
+int freeze = 0;
+int width, height;
+
 Streamplot plots[STREAMPLOT_N_MAX_PLOTS];
 
 GLfloat gMVPMatrix[16] = {
@@ -228,6 +231,9 @@ void StreamplotInit(int numPlots, StreamplotType* plotTypes, int screenWidth, in
     int w = screenWidth;
     int h = screenHeight;
 
+    width = w;
+    height = h;
+
     nPlots = numPlots;
     for(i = 0;i < nPlots; i++) {
         for(j = 0; j < 4; j++) {
@@ -265,24 +271,33 @@ void StreamplotInit(int numPlots, StreamplotType* plotTypes, int screenWidth, in
     checkGlError("glViewport");
 }
 
-void StreamplotMainLoop(int nDataPoints, float* data)
+void StreamplotMainLoop(int nDataPoints, float* data, StreamplotEvent evt)
 {
+    if(evt.event)
+        LOGI("Event: %f", evt.eventX0);
+
+    if(evt.event == STREAMPLOT_EVENT_UP) {
+        freeze = !freeze;
+    }
+
     int i, j;
     int nPoints = nDataPoints / nPlots;
 
     assert(nPlots*nPoints == nDataPoints);
 
     clearScreen();
-
-    for(i = 0;i < nPoints;i++) {
-        int localLastPtr = (ptr+i) % N;
-        int localPtr = (ptr+i+1) % N;
-        for(j = 0; j < nPlots; j++) {
-            plots[j].data[localPtr*4 + 1] = plots[j].data[localLastPtr*4 + 3];
-            plots[j].data[localPtr*4 + 3] = data[i*nPlots + j];
+    if(!freeze) {
+        for(i = 0;i < nPoints;i++) {
+            int localLastPtr = (ptr+i) % N;
+            int localPtr = (ptr+i+1) % N;
+            for(j = 0; j < nPlots; j++) {
+                plots[j].data[localPtr*4 + 1] = plots[j].data[localLastPtr*4 + 3];
+                plots[j].data[localPtr*4 + 3] = data[i*nPlots + j];
+            }
         }
+        ptr = (ptr + nPoints) % N;
     }
-    ptr = (ptr + nPoints) % N;
+
 
     setScale();
     renderPlots();

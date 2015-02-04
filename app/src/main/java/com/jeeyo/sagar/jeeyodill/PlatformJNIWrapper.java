@@ -41,6 +41,6 @@ public class PlatformJNIWrapper {
     }
 
     public static native void init(AssetManager assetManager, int width, int height, StreamplotType[] plotTypes);
-    public static native void mainLoop(float[] data);
+    public static native void mainLoop(float[] data, int event, float eventX0, float eventY0, float eventX1, float eventY1);
 
 }

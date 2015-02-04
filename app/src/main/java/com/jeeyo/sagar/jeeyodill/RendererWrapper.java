@@ -46,8 +46,17 @@ import javax.microedition.khronos.opengles.GL10;
  */
 public class RendererWrapper implements GLSurfaceView.Renderer {
 
-    public boolean allowNewVals = true;
+    public static final int EVENT_DOWN = 1;
+    public static final int EVENT_UP = 2;
+    public static final int EVENT_PINCH = 3;
+
     private Activity mActivity;
+
+    public float mEventX1;
+    public float mEventX0;
+    public float mEventY1;
+    public float mEventY0;
+    public int mEvent;
 
     ConcurrentLinkedQueue<Float> mQueue = new ConcurrentLinkedQueue<>();
 
@@ -78,7 +87,8 @@ public class RendererWrapper implements GLSurfaceView.Renderer {
             data[size] = mQueue.poll();
         }
         //PlatformJNIWrapper.mainLoop(data);
-        PlatformJNIWrapper.mainLoop(testData());
+        PlatformJNIWrapper.mainLoop(testData(), mEvent, mEventX0, mEventY0, mEventX1, mEventY1);
+        mEvent = 0; // clear the event
     }
 
     int mN = 0;

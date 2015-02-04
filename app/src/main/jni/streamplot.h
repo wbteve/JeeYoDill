@@ -60,11 +60,21 @@ extern "C" {
 
 #define STREAMPLOT_STYLE_1 1
 
+#define STREAMPLOT_EVENT_DOWN 1
+#define STREAMPLOT_EVENT_UP 2
+#define STREAMPLOT_EVENT_PINCH 3
+
 typedef struct StreamplotType {
     GLfloat color[4];
     GLfloat thickness;
     GLint style
 } StreamplotType;
+
+typedef struct StreamplotEvent {
+    int event;
+    float eventX0, eventY0;
+    float eventX1, eventY1;
+} StreamplotEvent;
 
 void StreamplotInit(int nPlots, StreamplotType* plotTypes, int screenWidth, int screenHeight);
 
@@ -77,7 +87,7 @@ void StreamplotInit(int nPlots, StreamplotType* plotTypes, int screenWidth, int 
 //    (ch0_data3, ch_1_data3, ch_2_data3),
 // ]
 // nDataPoints = 12 in the above case
-void StreamplotMainLoop(int nDataPoints, float* data);
+void StreamplotMainLoop(int nDataPoints, float* data, StreamplotEvent evt);
 
 #ifdef __cplusplus
 }

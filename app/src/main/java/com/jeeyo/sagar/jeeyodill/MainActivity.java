@@ -154,8 +154,21 @@ public class MainActivity extends Activity {
         mGLSurfaceView.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
-                if(event.getAction() == MotionEvent.ACTION_DOWN) {
-                    mRendererWrapper.allowNewVals = !mRendererWrapper.allowNewVals;
+                switch(event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        mRendererWrapper.mEvent = RendererWrapper.EVENT_DOWN;
+                        break;
+                    case MotionEvent.ACTION_UP:
+                        mRendererWrapper.mEvent = RendererWrapper.EVENT_UP;
+                }
+                mRendererWrapper.mEventX0 = event.getX();
+                mRendererWrapper.mEventY0 = event.getY();
+                if(event.getPointerCount() > 1) {
+                    mRendererWrapper.mEvent = RendererWrapper.EVENT_PINCH;
+                    mRendererWrapper.mEventX0 = event.getX(0);
+                    mRendererWrapper.mEventX1 = event.getX(1);
+                    mRendererWrapper.mEventY0 = event.getY(0);
+                    mRendererWrapper.mEventY1 = event.getY(1);
                 }
                 return true;
             }
@@ -188,7 +201,6 @@ public class MainActivity extends Activity {
             mBluetoothAdapter.startLeScan(mLeScanCallback);
             mBleInitStatus = true;
         }
-        mRendererWrapper.allowNewVals = true;
     }
 
     private void BLEEnd() {
