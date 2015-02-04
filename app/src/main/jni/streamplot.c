@@ -155,8 +155,14 @@ static void setScale() {
     float range = maxVal - minVal;
     float avg = (maxVal + minVal) / 2.0f;
 
-    if( ((maxVal * scaleY) > STREAMPLOT_SCALE_HI_THRESH) ||
-        ((minVal * scaleY) < -STREAMPLOT_SCALE_HI_THRESH) ||
+    scaleY = gMVPMatrix[5];
+    tranY = gMVPMatrix[13];
+
+    float maxY = maxVal*scaleY + tranY;
+    float minY = minVal*scaleY + tranY;
+
+    if( (maxY > STREAMPLOT_SCALE_HI_THRESH) ||
+        (minY < -STREAMPLOT_SCALE_HI_THRESH) ||
         ((range*scaleY) < (2.0f * STREAMPLOT_SCALE_LO_THRESH)))
     {
         scaleY = 2.0f * STREAMPLOT_SCALE_TARG_THRESH / (range + STREAMPLOT_EPS);

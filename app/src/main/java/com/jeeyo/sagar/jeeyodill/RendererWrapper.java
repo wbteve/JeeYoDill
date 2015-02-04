@@ -70,41 +70,36 @@ public class RendererWrapper implements GLSurfaceView.Renderer {
         PlatformJNIWrapper.init(mActivity.getAssets(), width, height, plotTypes);
     }
 
-    int mN = 0;
-    float mScale = 3.0f;
     @Override
     public void onDrawFrame(GL10 gl) {
-        /*
-        while(true) {
-            Float d = mQueue.poll();
-            if(d == null) {
-                break;
-            }
-            if(allowNewVals)
-                PlatformJNIWrapper.add(d);
+        int size = mQueue.size();
+        float[] data = new float[size];
+        for(int i = 0; i < size; i++) {
+            data[size] = mQueue.poll();
         }
+        //PlatformJNIWrapper.mainLoop(data);
+        PlatformJNIWrapper.mainLoop(testData());
+    }
 
-        for(int i = 0; i < 6; i++) {
-            if (allowNewVals)
-                PlatformJNIWrapper.add(mN * scale/500);
-            mN = (mN + 1) % 253;
-            if(mN == 0) {
-                if(scale == 1.0f) {
-                    scale = 0.6f;
-                } else {
-                    scale = 1.0f;
-                }
-            }
-        } */
+    int mN = 0;
+    float mScale = 3.0f;
+    private float[] testData() {
         int nPoints = 6;
         float[] data = new float[2*nPoints];
         int max = 253;
         for(int i = 0; i < nPoints; i++) {
-            data[2*i] = (mN % max);
-            data[2*i+1] = 500.0f + ((mN + max/2) % max);
+            data[2*i] = mScale * mN;
+            data[2*i+1] = (-500.0f + (mN + max/2) % max);
             mN++;
+            if(mN == max) {
+                mN = 0;
+                if(mScale == 3.0f)
+                    mScale = 6.0f;
+                else
+                    mScale = 3.0f;
+            }
         }
-        PlatformJNIWrapper.mainLoop(data);
+        return data;
     }
 
     public void addDataPoint(int val) {
