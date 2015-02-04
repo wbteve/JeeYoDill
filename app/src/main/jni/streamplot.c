@@ -44,7 +44,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define SCALE_HI_THRESH 0.99f
 #define SCALE_LO_THRESH 0.25f
-#define SCALE_TARG_THRESH 0.75f
+#define SCALE_TARG_THRESH 0.7f
 
 int N = 1600; // Number of data points
 int ptr = 0; // pointer to line
