@@ -70,10 +70,10 @@ Java_com_jeeyo_sagar_jeeyodill_PlatformJNIWrapper_init(JNIEnv* env, jclass this,
 JNIEXPORT void JNICALL
 Java_com_jeeyo_sagar_jeeyodill_PlatformJNIWrapper_mainLoop(JNIEnv* env, jclass this, jfloatArray jdata)
 {
-    int nPoints = (*env)->GetArrayLength(env, jdata);
+    int nDataPoints = (*env)->GetArrayLength(env, jdata);
     jfloat* data = (*env)->GetFloatArrayElements(env, jdata, 0);
 
-    StreamplotMainLoop(nPoints, data);
+    StreamplotMainLoop(nDataPoints, data);
 
     (*env)->ReleaseFloatArrayElements(env, jdata, data, 0);
 }

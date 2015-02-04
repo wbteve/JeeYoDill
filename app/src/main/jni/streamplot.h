@@ -39,6 +39,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <assert.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -75,7 +76,8 @@ void StreamplotInit(int nPlots, StreamplotType* plotTypes, int screenWidth, int 
 //    (ch0_data2, ch_1_data2, ch_2_data2),
 //    (ch0_data3, ch_1_data3, ch_2_data3),
 // ]
-void StreamplotMainLoop(int nPoints, float* data);
+// nDataPoints = 12 in the above case
+void StreamplotMainLoop(int nDataPoints, float* data);
 
 #ifdef __cplusplus
 }

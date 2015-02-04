@@ -64,6 +64,31 @@ public class StreamplotType {
                 mColorG = 0.267f;
                 mColorB = 0.267f;
                 break;
+
+            case COLOR_BLUE:
+                mColorR = 0.2f;
+                mColorG = 0.71f;
+                mColorB = 0.898f;
+                break;
+
+            case COLOR_PURPLE:
+                mColorR = 0.667f;
+                mColorG = 0.4f;
+                mColorB = 0.8f;
+                break;
+
+            case COLOR_GREEN:
+                mColorR = 0.6f;
+                mColorG = 0.8f;
+                mColorB = 0.0f;
+                break;
+
+            case COLOR_YELLOW:
+                mColorR = 1.0f;
+                mColorG = 0.733f;
+                mColorB = 0.2f;
+                break;
+
             default:
                 mColorR = 1.0f;
                 mColorG = 1.0f;

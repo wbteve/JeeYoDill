@@ -259,9 +259,12 @@ void StreamplotInit(int numPlots, StreamplotType* plotTypes, int screenWidth, in
     checkGlError("glViewport");
 }
 
-void StreamplotMainLoop(int nPoints, float* data)
+void StreamplotMainLoop(int nDataPoints, float* data)
 {
     int i, j;
+    int nPoints = nDataPoints / nPlots;
+
+    assert(nPlots*nPoints == nDataPoints);
 
     clearScreen();
 

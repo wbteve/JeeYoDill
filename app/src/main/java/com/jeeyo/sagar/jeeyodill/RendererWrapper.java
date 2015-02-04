@@ -62,15 +62,16 @@ public class RendererWrapper implements GLSurfaceView.Renderer {
 
     @Override
     public void onSurfaceChanged(GL10 gl, int width, int height) {
-        StreamplotType[] plotTypes = new StreamplotType[1];
+        StreamplotType[] plotTypes = new StreamplotType[2];
 
         plotTypes[0] = new StreamplotType(StreamplotType.COLOR_RED);
+        plotTypes[1] = new StreamplotType(StreamplotType.COLOR_GREEN);
 
         PlatformJNIWrapper.init(mActivity.getAssets(), width, height, plotTypes);
     }
 
     int mN = 0;
-    float scale = 3.0f;
+    float mScale = 3.0f;
     @Override
     public void onDrawFrame(GL10 gl) {
         /*
@@ -96,17 +97,12 @@ public class RendererWrapper implements GLSurfaceView.Renderer {
             }
         } */
         int nPoints = 6;
-        float[] data = new float[nPoints];
+        float[] data = new float[2*nPoints];
+        int max = 253;
         for(int i = 0; i < nPoints; i++) {
-            data[i] = mN * scale/500;
-            mN = (mN + 1) % 253;
-            if(mN == 0) {
-                if(scale == 1.0f) {
-                    scale = 0.6f;
-                } else {
-                    scale = 1.0f;
-                }
-            }
+            data[2*i] = (mN % max);
+            data[2*i+1] = 500.0f + ((mN + max/2) % max);
+            mN++;
         }
         PlatformJNIWrapper.mainLoop(data);
     }
