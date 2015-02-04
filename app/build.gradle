@@ -12,7 +12,7 @@ android {
         versionName "2"
         ndk {
             moduleName "streamplot"
-            ldLibs "EGL", "GLESv3", "dl", "log"
+            ldLibs "EGL", "GLESv2", "dl", "log"
         }
     }
     buildTypes {

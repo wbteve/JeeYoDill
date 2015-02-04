@@ -148,7 +148,7 @@ public class MainActivity extends Activity {
 
         mGLSurfaceView = new GLSurfaceView(this);
         mGLSurfaceView.setEGLContextClientVersion(2);
-        mRendererWrapper = new RendererWrapper();
+        mRendererWrapper = new RendererWrapper(this);
         mGLSurfaceView.setRenderer(mRendererWrapper);
         setContentView(mGLSurfaceView);
         mGLSurfaceView.setOnTouchListener(new View.OnTouchListener() {

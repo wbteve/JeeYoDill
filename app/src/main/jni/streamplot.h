@@ -31,14 +31,51 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef __STREAMPLOT_H__
 #define __STREAMPLOT_H__
 
+#include "platform.h"
+
+#include <jni.h>
+#include <android/log.h>
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#define STREAMPLOT_N_MAX_PLOTS 10
+#define STREAMPLOT_N_MAX_POINTS 10000
 
-void renderFrame();
-void setupGraphics(int w, int h);
-void addDataPoint(float val);
+#define STREAMPLOT_EPS 1e-6
+
+#define STREAMPLOT_SCALE_HI_THRESH 0.99f
+#define STREAMPLOT_SCALE_LO_THRESH 0.25f
+#define STREAMPLOT_SCALE_TARG_THRESH 0.7f
+
+#define STREAMPLOT_COLOR_RED 1
+#define STREAMPLOT_COLOR_BLUE 2
+#define STREAMPLOT_COLOR_GREEN 3
+
+#define STREAMPLOT_STYLE_1 1
+
+typedef struct StreamplotType {
+    GLfloat color[4];
+    GLfloat thickness;
+    GLint style
+} StreamplotType;
+
+void StreamplotInit(int nPlots, StreamplotType* plotTypes, int screenWidth, int screenHeight);
+
+
+// data is layed out like:
+// [
+//    (ch0_data0, ch_1_data0, ch_2_data0),
+//    (ch0_data1, ch_1_data1, ch_2_data1),
+//    (ch0_data2, ch_1_data2, ch_2_data2),
+//    (ch0_data3, ch_1_data3, ch_2_data3),
+// ]
+void StreamplotMainLoop(int nPoints, float* data);
 
 #ifdef __cplusplus
 }

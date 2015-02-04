@@ -29,19 +29,18 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 package com.jeeyo.sagar.jeeyodill;
 
+
+import android.content.res.AssetManager;
+
 /**
  * Created by sagar on 28/1/15.
  */
-public class StreamplotJNIWrapper {
+public class PlatformJNIWrapper {
     static {
         System.loadLibrary("streamplot");
     }
-    public static native void on_surface_created();
 
-    public static native void on_surface_changed(int width, int height);
-
-    public static native void on_draw_frame();
-
-    public static native void add(float data);
+    public static native void init(AssetManager assetManager, int width, int height, StreamplotType[] plotTypes);
+    public static native void mainLoop(float[] data);
 
 }

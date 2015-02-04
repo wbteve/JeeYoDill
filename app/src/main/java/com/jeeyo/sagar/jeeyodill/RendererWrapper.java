@@ -29,6 +29,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 package com.jeeyo.sagar.jeeyodill;
 
+import android.app.Activity;
+import android.content.res.AssetManager;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.util.Log;
@@ -45,34 +47,45 @@ import javax.microedition.khronos.opengles.GL10;
 public class RendererWrapper implements GLSurfaceView.Renderer {
 
     public boolean allowNewVals = true;
+    private Activity mActivity;
 
     ConcurrentLinkedQueue<Float> mQueue = new ConcurrentLinkedQueue<>();
 
+    public RendererWrapper(Activity activity) {
+        mActivity = activity;
+    }
+
     @Override
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
-        StreamplotJNIWrapper.on_surface_created();
+
     }
 
     @Override
     public void onSurfaceChanged(GL10 gl, int width, int height) {
-        StreamplotJNIWrapper.on_surface_changed(width, height);
+        StreamplotType[] plotTypes = new StreamplotType[1];
+
+        plotTypes[0] = new StreamplotType(StreamplotType.COLOR_RED);
+
+        PlatformJNIWrapper.init(mActivity.getAssets(), width, height, plotTypes);
     }
+
     int mN = 0;
     float scale = 3.0f;
     @Override
     public void onDrawFrame(GL10 gl) {
+        /*
         while(true) {
             Float d = mQueue.poll();
             if(d == null) {
                 break;
             }
             if(allowNewVals)
-                StreamplotJNIWrapper.add(d);
+                PlatformJNIWrapper.add(d);
         }
-        /*
+
         for(int i = 0; i < 6; i++) {
             if (allowNewVals)
-                StreamplotJNIWrapper.add(mN * scale/500);
+                PlatformJNIWrapper.add(mN * scale/500);
             mN = (mN + 1) % 253;
             if(mN == 0) {
                 if(scale == 1.0f) {
@@ -82,7 +95,20 @@ public class RendererWrapper implements GLSurfaceView.Renderer {
                 }
             }
         } */
-        StreamplotJNIWrapper.on_draw_frame();
+        int nPoints = 6;
+        float[] data = new float[nPoints];
+        for(int i = 0; i < nPoints; i++) {
+            data[i] = mN * scale/500;
+            mN = (mN + 1) % 253;
+            if(mN == 0) {
+                if(scale == 1.0f) {
+                    scale = 0.6f;
+                } else {
+                    scale = 1.0f;
+                }
+            }
+        }
+        PlatformJNIWrapper.mainLoop(data);
     }
 
     public void addDataPoint(int val) {

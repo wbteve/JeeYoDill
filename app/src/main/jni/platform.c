@@ -31,30 +31,52 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "platform.h"
 #include "streamplot.h"
 
+#include <android/asset_manager_jni.h>
 
+static AAssetManager* asset_manager;
 
 JNIEXPORT void JNICALL
-Java_com_jeeyo_sagar_jeeyodill_StreamplotJNIWrapper_add(JNIEnv* env, jclass this, jfloat val) {
-    addDataPoint(val);
+Java_com_jeeyo_sagar_jeeyodill_PlatformJNIWrapper_init(JNIEnv* env, jclass this,
+                                                       jobject java_asset_manager,
+                                                       int width, int height,
+                                                       jobjectArray jPlotTypes)
+{
+    int i;
+
+    //asset_manager = AAssetManager_fromJava(env, java_asset_manager);
+
+    int nPlots = (*env)->GetArrayLength(env, jPlotTypes);
+
+    StreamplotType plotTypes[nPlots];
+
+    for(i = 0; i < nPlots; i++) {
+        jobject jPlotTypeObj = (jobject) (*env)->GetObjectArrayElement(env, jPlotTypes, i);
+        jclass jPlotType = (*env)->GetObjectClass(env, jPlotTypeObj);
+
+        plotTypes[i].color[0] = (*env)->GetFloatField(env, jPlotTypeObj, (*env)->GetFieldID(env, jPlotType, "mColorR", "F"));
+        plotTypes[i].color[1] = (*env)->GetFloatField(env, jPlotTypeObj, (*env)->GetFieldID(env, jPlotType, "mColorG", "F"));
+        plotTypes[i].color[2] = (*env)->GetFloatField(env, jPlotTypeObj, (*env)->GetFieldID(env, jPlotType, "mColorB", "F"));
+        plotTypes[i].color[3] = (*env)->GetFloatField(env, jPlotTypeObj, (*env)->GetFieldID(env, jPlotType, "mColorA", "F"));
+
+        plotTypes[i].thickness = (*env)->GetFloatField(env, jPlotTypeObj, (*env)->GetFieldID(env, jPlotType, "mThickness", "F"));
+        plotTypes[i].style = (*env)->GetIntField(env, jPlotTypeObj, (*env)->GetFieldID(env, jPlotType, "mStyle", "I"));
+
+    }
+
+    StreamplotInit(nPlots, plotTypes, width, height);
+
 }
 
 JNIEXPORT void JNICALL
-Java_com_jeeyo_sagar_jeeyodill_StreamplotJNIWrapper_on_1surface_1created(JNIEnv *env, jclass this) {
+Java_com_jeeyo_sagar_jeeyodill_PlatformJNIWrapper_mainLoop(JNIEnv* env, jclass this, jfloatArray jdata)
+{
+    int nPoints = (*env)->GetArrayLength(env, jdata);
+    jfloat* data = (*env)->GetFloatArrayElements(env, jdata, 0);
 
+    StreamplotMainLoop(nPoints, data);
+
+    (*env)->ReleaseFloatArrayElements(env, jdata, data, 0);
 }
-
-
-JNIEXPORT void JNICALL
-Java_com_jeeyo_sagar_jeeyodill_StreamplotJNIWrapper_on_1surface_1changed(JNIEnv *env, jclass this, jint w, jint h) {
-    setupGraphics(w, h);
-}
-
-JNIEXPORT void JNICALL
-Java_com_jeeyo_sagar_jeeyodill_StreamplotJNIWrapper_on_1draw_1frame(JNIEnv *env, jclass this) {
-    renderFrame();
-}
-
-
 
 void printGLString(const char *name, GLenum s) {
     const char *v = (const char *) glGetString(s);

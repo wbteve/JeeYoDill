@@ -29,37 +29,33 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include "streamplot.h"
-#include "platform.h"
 
-#include <jni.h>
-#include <android/log.h>
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-
-#define Nmax 10000
-#define MAX_TEXTURES 10
-#define EPS 1e-6
-
-#define SCALE_HI_THRESH 0.99f
-#define SCALE_LO_THRESH 0.25f
-#define SCALE_TARG_THRESH 0.7f
-
+int nPlots = 1;
 int N = 1600; // Number of data points
-int ptr = 0; // pointer to line
-float lastYval = 0;
+int ptr = 0; // pointer to line. goes from 0 to N
 
-GLfloat gLineEnds[2*(2*Nmax)]; // 2*N lines, and 2*(2*N) line endings
+typedef struct Streamplot {
+    GLfloat color[4];
+    GLfloat thickness;
+    GLfloat data[4*STREAMPLOT_N_MAX_POINTS];
+} Streamplot;
+
+Streamplot plots[STREAMPLOT_N_MAX_PLOTS];
+
 GLfloat gMVPMatrix[16] = {
-    1.0f, 0.0f, 0.0f, 0.0f,
-    0.0f, 1.0f, 0.0f, 0.0f,
-    0.0f, 0.0f, 1.0f, 0.0f,
-    0.0f, 0.0f, 0.0f, 1.0f
-};
-GLfloat gPoint[] = { -1.0f, 0.0f };
-float scaleY = 1.0f;
-float tranY = 0.0f;
+        1.0f, 0.0f, 0.0f, 0.0f,
+        0.0f, 1.0f, 0.0f, 0.0f,
+        0.0f, 0.0f, 1.0f, 0.0f,
+        0.0f, 0.0f, 0.0f, 1.0f
+    };
+
+
+GLuint gProgram;
+
+GLuint gLineHandle;
+GLuint gMVPHandle;
+GLuint gColorHandle;
+
 
 static const char gVertexShader[] =
     "uniform mat4 u_MVPMatrix;\n"
@@ -71,15 +67,12 @@ static const char gVertexShader[] =
 
 static const char gFragmentShader[] =
     "precision mediump float;\n"
+    "uniform vec4 u_Color;\n"
     "void main() {\n"
-    "  gl_FragColor = vec4(1.0, 0.26, 0.26, 1.0);\n"
+    "  gl_FragColor = u_Color;\n"
     "}\n";
 
-GLuint gProgram;
-GLuint gLineHandle;
-GLuint gMVPHandle;
-
-GLuint loadShader(GLenum shaderType, const char* pSource) {
+static GLuint loadShader(GLenum shaderType, const char* pSource) {
     GLuint shader = glCreateShader(shaderType);
     if (shader) {
         glShaderSource(shader, 1, &pSource, NULL);
@@ -105,7 +98,7 @@ GLuint loadShader(GLenum shaderType, const char* pSource) {
     return shader;
 }
 
-GLuint createProgram(const char* pVertexSource, const char* pFragmentSource) {
+static GLuint createProgram(const char* pVertexSource, const char* pFragmentSource) {
     GLuint vertexShader = loadShader(GL_VERTEX_SHADER, pVertexSource);
     if (!vertexShader) {
         return 0;
@@ -145,8 +138,104 @@ GLuint createProgram(const char* pVertexSource, const char* pFragmentSource) {
     return program;
 }
 
-void setupGraphics(int w, int h) {
-    LOGI("setupGraphics(%d, %d)", w, h);
+static void setScale() {
+    int i, j;
+    float maxVal = -INFINITY, minVal = INFINITY, val, scaleY, tranY;
+
+    for(i = 0;i < nPlots; i++) {
+        for(j = 0; j < N; j++) {
+            val = plots[i].data[4*j + 1];
+            if(val > maxVal)
+                maxVal = val;
+            if(val < minVal)
+                minVal = val;
+        }
+    }
+
+    float range = maxVal - minVal;
+    float avg = (maxVal + minVal) / 2.0f;
+
+    if( ((maxVal * scaleY) > STREAMPLOT_SCALE_HI_THRESH) ||
+        ((minVal * scaleY) < -STREAMPLOT_SCALE_HI_THRESH) ||
+        ((range*scaleY) < (2.0f * STREAMPLOT_SCALE_LO_THRESH)))
+    {
+        scaleY = 2.0f * STREAMPLOT_SCALE_TARG_THRESH / (range + STREAMPLOT_EPS);
+        tranY = -1.0f * scaleY * avg;
+    }
+    gMVPMatrix[5] = scaleY;
+    gMVPMatrix[13] = tranY;
+}
+
+static void clearScreen() {
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    checkGlError("glClearColor");
+
+    glClear( GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+    checkGlError("glClear");
+}
+
+static void renderPlots() {
+    int i;
+
+    for(i = 0; i < nPlots; i++) {
+        // Draw the line
+
+        glLineWidth(plots[i].thickness);
+        checkGlError("glLineWidth");
+
+        glUseProgram(gProgram);
+        checkGlError("glUseProgram");
+
+        glVertexAttribPointer(gLineHandle, 2, GL_FLOAT, GL_FALSE, 0, plots[i].data);
+        checkGlError("glVertexAttribPointer");
+
+        glEnableVertexAttribArray(gLineHandle);
+        checkGlError("glEnableVertexAttribArray");
+
+        glUniformMatrix4fv(gMVPHandle, 1, GL_FALSE, gMVPMatrix);
+        checkGlError("glUniformMatrix4fv");
+
+        glUniform4fv(gColorHandle, 1, plots[i].color);
+        checkGlError("glUniform4fv");
+
+        glDrawArrays(GL_LINES, 0, 2*N);
+        checkGlError("glDrawArrays");
+
+        // Draw the marker point
+        GLfloat pointMarker[2] = {plots[i].data[ptr*4 + 2], plots[i].data[ptr*4 + 3]};
+        glVertexAttribPointer(gLineHandle, 2, GL_FLOAT, GL_FALSE, 0, pointMarker);
+        checkGlError("glVertexAttribPointer");
+
+        glEnableVertexAttribArray(gLineHandle);
+        checkGlError("glEnableVertexAttribArray");
+
+        glUniformMatrix4fv(gMVPHandle, 1, GL_FALSE, gMVPMatrix);
+        checkGlError("glUniformMatrix4fv");
+
+        glDrawArrays(GL_POINTS, 0, 1);
+        checkGlError("glDrawArrays");
+    }
+}
+
+void StreamplotInit(int numPlots, StreamplotType* plotTypes, int screenWidth, int screenHeight) {
+    int i, j;
+    int w = screenWidth;
+    int h = screenHeight;
+
+    nPlots = numPlots;
+    for(i = 0;i < nPlots; i++) {
+        for(j = 0; j < 4; j++) {
+            plots[i].color[j] = plotTypes[i].color[j];
+        }
+        plots[i].thickness = plotTypes[i].thickness;
+
+        for(j = 0;j < STREAMPLOT_N_MAX_POINTS;j++) {
+            plots[i].data[4*j] = -1.0f + (j * 2.0f) / N;
+            plots[i].data[4*j + 2] = -1.0f + ((j+1) * 2.0f) / N;
+        }
+    }
+
+    LOGI("StreamplotInit(%d, %d)", w, h);
 
     gProgram = createProgram(gVertexShader, gFragmentShader);
     if (!gProgram) {
@@ -160,101 +249,32 @@ void setupGraphics(int w, int h) {
     gMVPHandle = glGetUniformLocation(gProgram, "u_MVPMatrix");
     checkGlError("glGetUniformLocation");
 
+    gColorHandle = glGetUniformLocation(gProgram, "u_Color");
+    checkGlError("glGetUniformLocation");
+
     LOGI("glGetAttribLocation(\"vPosition\") = %d\n",
             gLineHandle);
 
     glViewport(0, 0, w, h);
     checkGlError("glViewport");
-
-    int i;
-    for(i = 0;i < N;i++) {
-        gLineEnds[4*i] = -1.0f + (i * 2.0f) / N;
-        gLineEnds[4*i + 2] = -1.0f + ((i+1) * 2.0f) / N;
-    }
 }
 
-void addDataPoint(float val) {
-    //LOGI("new-val: %d", val);
-    int max = 2*(2*N);
+void StreamplotMainLoop(int nPoints, float* data)
+{
+    int i, j;
 
-    // ptr is pointing to t0 in [(t0, y0), (t1, y1)]
-    gLineEnds[ptr+1] = lastYval;
-    gLineEnds[ptr+3] = val;
+    clearScreen();
 
-    gPoint[0] = gLineEnds[ptr+2];
-    gPoint[1] = val;
-
-    lastYval = val;
-    ptr = ptr + 4;
-    if(ptr >= max) {
-        ptr = ptr - max;
+    for(i = 0;i < nPoints;i++) {
+        int localLastPtr = (ptr+i) % N;
+        int localPtr = (ptr+i+1) % N;
+        for(j = 0; j < nPlots; j++) {
+            plots[j].data[localPtr*4 + 1] = plots[j].data[localLastPtr*4 + 3];
+            plots[j].data[localPtr*4 + 3] = data[i*nPlots + j];
+        }
     }
+    ptr = (ptr + nPoints) % N;
+
+    setScale();
+    renderPlots();
 }
-
-void setYScale() {
-    int i;
-    float maxVal = -INFINITY, minVal = INFINITY, val;
-    for(i = 0; i < N; i++) {
-        val = gLineEnds[4*i + 1];
-        if(val > maxVal)
-            maxVal = val;
-        if(val < minVal)
-            minVal = val;
-    }
-
-    float range = maxVal - minVal;
-    float avg = (maxVal + minVal) / 2.0f;
-
-    if( ((maxVal * scaleY) > SCALE_HI_THRESH) ||
-        ((minVal * scaleY) < -SCALE_HI_THRESH) ||
-        ((range*scaleY) < (2.0f * SCALE_LO_THRESH)))
-    {
-        scaleY = 2.0f * SCALE_TARG_THRESH / (range + EPS);
-        tranY = -1.0f * scaleY * avg;
-    }
-    gMVPMatrix[5] = scaleY;
-    gMVPMatrix[13] = tranY;
-}
-
-void renderFrame() {
-    setYScale();
-
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    checkGlError("glClearColor");
-
-    glClear( GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-    checkGlError("glClear");
-
-    glLineWidth(5.0f);
-    checkGlError("glLineWidth");
-
-    glUseProgram(gProgram);
-    checkGlError("glUseProgram");
-
-    glVertexAttribPointer(gLineHandle, 2, GL_FLOAT, GL_FALSE, 0, gLineEnds);
-    checkGlError("glVertexAttribPointer");
-
-    glEnableVertexAttribArray(gLineHandle);
-    checkGlError("glEnableVertexAttribArray");
-
-    glUniformMatrix4fv(gMVPHandle, 1, GL_FALSE, gMVPMatrix);
-    checkGlError("glUniformMatrix4fv");
-
-    glDrawArrays(GL_LINES, 0, 2*N);
-    checkGlError("glDrawArrays");
-
-    glVertexAttribPointer(gLineHandle, 2, GL_FLOAT, GL_FALSE, 0, gPoint);
-    checkGlError("glVertexAttribPointer");
-
-    glEnableVertexAttribArray(gLineHandle);
-    checkGlError("glEnableVertexAttribArray");
-
-    glUniformMatrix4fv(gMVPHandle, 1, GL_FALSE, gMVPMatrix);
-    checkGlError("glUniformMatrix4fv");
-
-    glDrawArrays(GL_POINTS, 0, 1);
-    checkGlError("glDrawArrays");
-
-}
-
-

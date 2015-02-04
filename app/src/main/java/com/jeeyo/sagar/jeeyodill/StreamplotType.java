@@ -28,36 +28,48 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <jni.h>
-#include <GLES2/gl2.h>
-#include <GLES2/gl2ext.h>
-#include <android/log.h>
+package com.jeeyo.sagar.jeeyodill;
 
-#ifndef _Included_com_jeeyo_sagar_jeeyodill_StreamplotJNIWrapper
-#define _Included_com_jeeyo_sagar_jeeyodill_StreamplotJNIWrapper
-#ifdef __cplusplus
-extern "C" {
-#endif
+public class StreamplotType {
 
+    public static final int COLOR_BLUE = 0;
+    public static final int COLOR_PURPLE = 1;
+    public static final int COLOR_GREEN = 2;
+    public static final int COLOR_YELLOW = 3;
+    public static final int COLOR_RED = 4;
 
-#define  LOG_TAG    "libgl2jni"
-#define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
-#define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
+    public float mColorR;
+    public float mColorG;
+    public float mColorB;
+    public float mColorA;
 
-void printGLString(const char *name, GLenum s);
-void checkGlError(const char* op);
+    public float mThickness;
+    public int mStyle;
 
-JNIEXPORT void JNICALL
-Java_com_jeeyo_sagar_jeeyodill_PlatformJNIWrapper_init(JNIEnv* env, jclass this,
-                                                       jobject java_asset_manager,
-                                                       int width, int height,
-                                                       jobjectArray jPlotTypes);
+    public StreamplotType() {
+        mStyle = 0;
+        mThickness = 5.0f;
+    }
 
-JNIEXPORT void JNICALL
-Java_com_jeeyo_sagar_jeeyodill_PlatformJNIWrapper_mainLoop(JNIEnv* env, jclass this, jfloatArray jdata);
+    public StreamplotType(int color) {
+        setColor(color);
+        mStyle = 0;
+        mThickness = 5.0f;
+    }
 
-
-#ifdef __cplusplus
+    public void setColor(int color) {
+        switch(color) {
+            case COLOR_RED:
+                mColorR = 1.0f;
+                mColorG = 0.267f;
+                mColorB = 0.267f;
+                break;
+            default:
+                mColorR = 1.0f;
+                mColorG = 1.0f;
+                mColorB = 1.0f;
+                break;
+        }
+        mColorA = 1.0f;
+    }
 }
-#endif
-#endif
