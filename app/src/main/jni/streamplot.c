@@ -42,6 +42,9 @@ typedef struct Streamplot {
 
 int freeze = 0;
 int width, height;
+int lastEvent;
+float initPinchEventDx = 0;
+float initPinchEventX = 0;
 
 Streamplot plots[STREAMPLOT_N_MAX_PLOTS];
 
@@ -273,13 +276,41 @@ void StreamplotInit(int numPlots, StreamplotType* plotTypes, int screenWidth, in
 
 void StreamplotMainLoop(int nDataPoints, float* data, StreamplotEvent evt)
 {
-    if(evt.event)
-        LOGI("Event: %f", evt.eventX0);
+    // Process Events
+    float eventDx = abs(evt.eventX0 - evt.eventX1);
+    if(evt.event == STREAMPLOT_EVENT_PINCH && lastEvent != STREAMPLOT_EVENT_PINCH) {
+        initPinchEventDx = eventDx;
+        initPinchEventX = (evt.eventX0 - evt.eventX1) / 2.0f;
+        freeze = 1;
+    }
+    if(evt.event == STREAMPLOT_EVENT_PINCH && lastEvent == STREAMPLOT_EVENT_PINCH) {
+        // pinch event start
+        float relDx = (eventDx - initPinchEventDx) / width;
+        float absX = initPinchEventX / width;
 
-    if(evt.event == STREAMPLOT_EVENT_UP) {
+        float scaleX = gMVPMatrix[0];
+        float tranX = gMVPMatrix[12];
+
+        float newScaleX = scaleX * (1 + relDx);
+        float newTranX = 0;//(1 - newScaleX/scaleX) * (absX - tranX) + tranX;
+
+        if(newScaleX > 0.1f && newScaleX < 10.f) {
+            gMVPMatrix[0] = newScaleX;
+            gMVPMatrix[12] = newTranX;
+        }
+        LOGI("Event dx: %f", relDx);
+    }
+    if(evt.event == STREAMPLOT_EVENT_UP && lastEvent == STREAMPLOT_EVENT_PINCH) {
+        // pinch event ended
+        freeze = 0;
+    }
+    if(evt.event == STREAMPLOT_EVENT_UP && lastEvent != STREAMPLOT_EVENT_PINCH) {
         freeze = !freeze;
     }
+    lastEvent = evt.event;
 
+
+    // Add new data, if any.
     int i, j;
     int nPoints = nDataPoints / nPlots;
 
@@ -298,7 +329,9 @@ void StreamplotMainLoop(int nDataPoints, float* data, StreamplotEvent evt)
         ptr = (ptr + nPoints) % N;
     }
 
-
+    // Adjust y-axis scaling
     setScale();
+
+    // Draw the plots
     renderPlots();
 }
