@@ -59,14 +59,33 @@ GLfloat gMVPMatrix[16] = {
         0.0f, 0.0f, 0.0f, 1.0f
     };
 
+static GLfloat playPauseVertices[] = {
+    -1.0f, -1.0f,
+    -0.8f, -1.0f,
+    -1.0f, -0.8f,
+    -0.8f, -0.8f,
+};
 
-GLuint gProgram;
+static GLfloat playPauseTextureVertices[] = {
+    0.0f,  0.0f,
+    1.0f, 0.0f,
+    0.0f,  1.0f,
+    1.0f, 1.0f,
+};
+
+GLuint gProgram, gProgramTexture;
 
 GLuint gLineHandle;
 GLuint gPointSizeHandle;
 GLuint gMVPHandle;
 GLuint gColorHandle;
 
+GLuint gPauseButtonHandle;
+GLuint gPlayButtonHandle;
+
+GLuint gTexturePositionHandle;
+GLuint gTextureCoordinateHandle;
+GLuint gTextureUniformSamplerHandle;
 
 static const char gVertexShader[] =
     "uniform mat4 u_MVPMatrix;\n"
@@ -82,6 +101,23 @@ static const char gFragmentShader[] =
     "uniform vec4 u_Color;\n"
     "void main() {\n"
     "  gl_FragColor = u_Color;\n"
+    "}\n";
+
+static const char tVertexShader[] =
+    "attribute vec4 vPosition;\n"
+    "attribute vec4 vCoordinate;\n"
+    "varying vec2 textureCoordinate;\n"
+    "void main() {\n"
+    "    gl_Position = vPosition;\n"
+    "    textureCoordinate = vCoordinate.xy;\n"
+    "}\n";
+
+static const char tFragmentShader[] =
+    "precision lowp float;\n"
+    "varying vec2 textureCoordinate;\n"
+    "uniform sampler2D u_Texture;\n"
+    "void main() {\n"
+    "    gl_FragColor = texture2D(u_Texture, textureCoordinate);\n"
     "}\n";
 
 static GLuint loadShader(GLenum shaderType, const char* pSource) {
@@ -197,14 +233,14 @@ static void clearScreen() {
 static void renderPlots() {
     int i;
 
+    glUseProgram(gProgram);
+    checkGlError("glUseProgram");
+
     for(i = 0; i < nPlots; i++) {
         // Draw the line
 
         glLineWidth(plots[i].thickness);
         checkGlError("glLineWidth");
-
-        glUseProgram(gProgram);
-        checkGlError("glUseProgram");
 
         glVertexAttribPointer(gLineHandle, 2, GL_FLOAT, GL_FALSE, 0, plots[i].data);
         checkGlError("glVertexAttribPointer");
@@ -248,10 +284,13 @@ static void renderPlots() {
     }
 }
 
-void StreamplotInit(int numPlots, StreamplotType* plotTypes, int screenWidth, int screenHeight) {
+void StreamplotInit(int numPlots, StreamplotType* plotTypes, int screenWidth, int screenHeight, int* resHandles) {
     int i, j;
     int w = screenWidth;
     int h = screenHeight;
+
+    gPlayButtonHandle = resHandles[0];
+    gPauseButtonHandle = resHandles[1];
 
     width = w;
     height = h;
@@ -261,6 +300,10 @@ void StreamplotInit(int numPlots, StreamplotType* plotTypes, int screenWidth, in
 
     float scaleX = (float)STREAMPLOT_N_MAX_POINTS * 1.0f / (endPtr - startPtr);
     gMVPMatrix[0] = scaleX;
+
+    float aspectRatio = w * 1.0f / h;
+    playPauseVertices[7] = -1.0f + (1.0f + playPauseVertices[2]) * aspectRatio;
+    playPauseVertices[5] = -1.0f + (1.0f + playPauseVertices[2]) * aspectRatio;
 
     for(i = 0;i < nPlots; i++) {
         for(j = 0; j < 4; j++) {
@@ -280,6 +323,12 @@ void StreamplotInit(int numPlots, StreamplotType* plotTypes, int screenWidth, in
 
     LOGI("StreamplotInit(%d, %d)", w, h);
 
+    gProgramTexture = createProgram(tVertexShader, tFragmentShader);
+    if (!gProgramTexture) {
+        LOGE("Could not create program.");
+        return;
+    }
+
     gProgram = createProgram(gVertexShader, gFragmentShader);
     if (!gProgram) {
         LOGE("Could not create program.");
@@ -298,8 +347,14 @@ void StreamplotInit(int numPlots, StreamplotType* plotTypes, int screenWidth, in
     gPointSizeHandle = glGetUniformLocation(gProgram, "u_PointSize");
     checkGlError("glGetUniformLocation");
 
-    LOGI("glGetAttribLocation(\"vPosition\") = %d\n",
-            gLineHandle);
+    gTexturePositionHandle = glGetAttribLocation(gProgramTexture, "vPosition");
+    checkGlError("glGetAttribLocation");
+
+    gTextureCoordinateHandle = glGetAttribLocation(gProgramTexture, "vCoordinate");
+    checkGlError("glGetAttribLocation");
+
+    gTextureUniformSamplerHandle = glGetUniformLocation(gProgramTexture, "u_Texture");
+    checkGlError("glGetUniformLocation");
 
     glViewport(0, 0, w, h);
     checkGlError("glViewport");
@@ -391,7 +446,13 @@ static void processEvents(StreamplotEvent evt) {
         }
 
         // Plain touch release
-        if(evt.event == STREAMPLOT_EVENT_UP && lastEvent != STREAMPLOT_EVENT_PINCH) {
+        LOGI("X0: %f", evt.eventX0);
+        LOGI("Y0: %f", evt.eventY0);
+        if(evt.event == STREAMPLOT_EVENT_UP
+           && lastEvent != STREAMPLOT_EVENT_PINCH
+           && evt.eventX0/width < 0.2
+           && evt.eventY0/height > 0.8)
+        {
             freeze = !freeze;
         }
         lastEvent = evt.event;
@@ -416,6 +477,39 @@ static void addData(int nDataPoints, float* data) {
     }
 }
 
+static void renderPlayPauseButton()
+{
+    glUseProgram(gProgramTexture);
+    checkGlError("glUseProgram");
+
+    glActiveTexture(GL_TEXTURE0);
+    checkGlError("glActiveTexture");
+
+    if(freeze)
+        glBindTexture(GL_TEXTURE_2D, gPlayButtonHandle);
+    else
+        glBindTexture(GL_TEXTURE_2D, gPauseButtonHandle);
+    checkGlError("glBindTexture");
+
+    glUniform1i(gTextureUniformSamplerHandle, 0);
+    checkGlError("glUniform1i");
+
+    glVertexAttribPointer(gTexturePositionHandle, 2, GL_FLOAT, GL_FALSE, 0, playPauseVertices);
+    checkGlError("glVertexAttribPointer");
+
+    glEnableVertexAttribArray(gTexturePositionHandle);
+    checkGlError("glEnableVertexAttribArray");
+
+    glVertexAttribPointer(gTextureCoordinateHandle, 2, GL_FLOAT, GL_FALSE, 0, playPauseTextureVertices);
+    checkGlError("glVertexAttribPointer");
+
+    glEnableVertexAttribArray(gTextureCoordinateHandle);
+    checkGlError("glEnableVertexAttribArray");
+
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    checkGlError("glDrawArrays");
+}
+
 void StreamplotMainLoop(int nDataPoints, float* data, StreamplotEvent evt)
 {
     processEvents(evt);
@@ -426,4 +520,6 @@ void StreamplotMainLoop(int nDataPoints, float* data, StreamplotEvent evt)
 
     clearScreen();
     renderPlots();
+
+    renderPlayPauseButton();
 }

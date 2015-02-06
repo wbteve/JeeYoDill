@@ -31,6 +31,9 @@ package com.jeeyo.sagar.jeeyodill;
 
 
 import android.content.res.AssetManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.opengl.GLES20;
 
 /**
  * Created by sagar on 28/1/15.
@@ -40,7 +43,7 @@ public class PlatformJNIWrapper {
         System.loadLibrary("streamplot");
     }
 
-    public static native void init(AssetManager assetManager, int width, int height, StreamplotType[] plotTypes);
+    public static native void init(AssetManager assetManager, int width, int height, StreamplotType[] plotTypes, int[] resHandles);
     public static native void mainLoop(float[] data, int event, float eventX0, float eventY0, float eventX1, float eventY1);
 
 }

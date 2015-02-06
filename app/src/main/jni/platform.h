@@ -49,9 +49,10 @@ void checkGlError(const char* op);
 
 JNIEXPORT void JNICALL
 Java_com_jeeyo_sagar_jeeyodill_PlatformJNIWrapper_init(JNIEnv* env, jclass this,
-                                                       jobject java_asset_manager,
+                                                       jobject jAssetManager,
                                                        int width, int height,
-                                                       jobjectArray jPlotTypes);
+                                                       jobjectArray jPlotTypes,
+                                                       jintArray resHandles);
 
 JNIEXPORT void JNICALL
 Java_com_jeeyo_sagar_jeeyodill_PlatformJNIWrapper_mainLoop(JNIEnv* env, jclass this,

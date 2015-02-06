@@ -31,20 +31,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "platform.h"
 #include "streamplot.h"
 
-#include <android/asset_manager_jni.h>
-
-static AAssetManager* asset_manager;
-
 JNIEXPORT void JNICALL
 Java_com_jeeyo_sagar_jeeyodill_PlatformJNIWrapper_init(JNIEnv* env, jclass this,
-                                                       jobject java_asset_manager,
+                                                       jobject jAssetManager,
                                                        int width, int height,
-                                                       jobjectArray jPlotTypes)
+                                                       jobjectArray jPlotTypes,
+                                                       jintArray jResHandles)
 {
     int i;
-
-    //asset_manager = AAssetManager_fromJava(env, java_asset_manager);
-
     int nPlots = (*env)->GetArrayLength(env, jPlotTypes);
 
     StreamplotType plotTypes[nPlots];
@@ -63,7 +57,11 @@ Java_com_jeeyo_sagar_jeeyodill_PlatformJNIWrapper_init(JNIEnv* env, jclass this,
 
     }
 
-    StreamplotInit(nPlots, plotTypes, width, height);
+    jint* resHandles = (*env)->GetIntArrayElements(env, jResHandles, 0);
+
+    StreamplotInit(nPlots, plotTypes, width, height, resHandles);
+
+    (*env)->ReleaseIntArrayElements(env, jResHandles, resHandles, 0);
 
 }
 
