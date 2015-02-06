@@ -147,7 +147,7 @@ static GLuint createProgram(const char* pVertexSource, const char* pFragmentSour
     return program;
 }
 
-static void setScale() {
+static void setYScale() {
     int i, j;
     float maxVal = -INFINITY, minVal = INFINITY, val, scaleY, tranY;
 
@@ -292,11 +292,9 @@ static void incrementPtr() {
     }
 }
 
-void StreamplotMainLoop(int nDataPoints, float* data, StreamplotEvent evt)
-{
-    // Process events, if any.
+static void processEvents(StreamplotEvent evt) {
     if(evt.event != 0) {
-        LOGI("Event: %d", evt.event);
+        //LOGI("Event: %d", evt.event);
 
         float scaleX = gMVPMatrix[0];
         float tranX = gMVPMatrix[12];
@@ -309,7 +307,7 @@ void StreamplotMainLoop(int nDataPoints, float* data, StreamplotEvent evt)
             freeze = 1;
             lastScaleX = scaleX;
             lastTranX = tranX;
-            LOGI("Pinch start-X: %f", initPinchEventX);
+            //LOGI("Pinch start-X: %f", initPinchEventX);
         }
 
         // Pinch in progress
@@ -326,6 +324,19 @@ void StreamplotMainLoop(int nDataPoints, float* data, StreamplotEvent evt)
 
             float xStart = (-1.0f - tranX) / scaleX;
             float xEnd = (1.0f - tranX) / scaleX;
+
+            if(xStart < -1.0f) {
+                tranX = -1 + scaleX;
+            }
+            if(xEnd > 1.0f) {
+                tranX = 1 - scaleX;
+            }
+
+            xStart = (-1.0f - tranX) / scaleX;
+            xEnd = (1.0f - tranX) / scaleX;
+
+            //LOGI("xStart: %f", xStart);
+            //LOGI("xEnd: %f", xEnd);
 
             if(xStart >= -1.0f && xEnd <= 1.0f && scaleX < STREAMPLOT_MAX_ZOOM) {
                 gMVPMatrix[12] = tranX;
@@ -350,13 +361,13 @@ void StreamplotMainLoop(int nDataPoints, float* data, StreamplotEvent evt)
                 ptr = startPtr;
 
 
-            LOGI("Pinch in Progress: %f", relDx);
+            //LOGI("Pinch in Progress: %f", relDx);
         }
 
         // Pinch end
         if(evt.event == STREAMPLOT_EVENT_UP && lastEvent == STREAMPLOT_EVENT_PINCH) {
             freeze = 0;
-            LOGI("Pinch end");
+            //LOGI("Pinch end");
         }
 
         // Plain touch release
@@ -365,8 +376,9 @@ void StreamplotMainLoop(int nDataPoints, float* data, StreamplotEvent evt)
         }
         lastEvent = evt.event;
     }
+}
 
-    // Add new data, if any.
+static void addData(int nDataPoints, float* data) {
     int i, j;
     int nPoints = nDataPoints / nPlots;
 
@@ -382,11 +394,16 @@ void StreamplotMainLoop(int nDataPoints, float* data, StreamplotEvent evt)
             }
         }
     }
+}
 
-    // Adjust y-axis scaling
-    setScale();
+void StreamplotMainLoop(int nDataPoints, float* data, StreamplotEvent evt)
+{
+    processEvents(evt);
 
-    // Draw the plots
+    addData(nDataPoints, data);
+
+    setYScale();
+
     clearScreen();
     renderPlots();
 }
