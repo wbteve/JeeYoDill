@@ -45,6 +45,7 @@ int width, height;
 int lastEvent;
 float initPinchEventDx = 0;
 float initPinchEventX = 0;
+float lastTranX, lastScaleX;
 
 Streamplot plots[STREAMPLOT_N_MAX_PLOTS];
 
@@ -276,39 +277,52 @@ void StreamplotInit(int numPlots, StreamplotType* plotTypes, int screenWidth, in
 
 void StreamplotMainLoop(int nDataPoints, float* data, StreamplotEvent evt)
 {
-    // Process Events
-    float eventDx = abs(evt.eventX0 - evt.eventX1);
-    if(evt.event == STREAMPLOT_EVENT_PINCH && lastEvent != STREAMPLOT_EVENT_PINCH) {
-        initPinchEventDx = eventDx;
-        initPinchEventX = (evt.eventX0 - evt.eventX1) / 2.0f;
-        freeze = 1;
-    }
-    if(evt.event == STREAMPLOT_EVENT_PINCH && lastEvent == STREAMPLOT_EVENT_PINCH) {
-        // pinch event start
-        float relDx = (eventDx - initPinchEventDx) / width;
-        float absX = initPinchEventX / width;
-
+    // Process events, if any.
+    if(evt.event != 0) {
         float scaleX = gMVPMatrix[0];
         float tranX = gMVPMatrix[12];
+        float eventDx = abs(evt.eventX0 - evt.eventX1);
 
-        float newScaleX = scaleX * (1 + relDx);
-        float newTranX = 0;//(1 - newScaleX/scaleX) * (absX - tranX) + tranX;
-
-        if(newScaleX > 0.1f && newScaleX < 10.f) {
-            gMVPMatrix[0] = newScaleX;
-            gMVPMatrix[12] = newTranX;
+        // Pinch start
+        if(evt.event == STREAMPLOT_EVENT_PINCH && lastEvent != STREAMPLOT_EVENT_PINCH) {
+            initPinchEventX = -1 + (evt.eventX0 + evt.eventX1) / width;
+            initPinchEventDx = eventDx;
+            freeze = 1;
+            lastScaleX = scaleX;
+            lastTranX = tranX;
+            LOGI("Pinch start-X: %f", initPinchEventX);
         }
-        LOGI("Event dx: %f", relDx);
-    }
-    if(evt.event == STREAMPLOT_EVENT_UP && lastEvent == STREAMPLOT_EVENT_PINCH) {
-        // pinch event ended
-        freeze = 0;
-    }
-    if(evt.event == STREAMPLOT_EVENT_UP && lastEvent != STREAMPLOT_EVENT_PINCH) {
-        freeze = !freeze;
-    }
-    lastEvent = evt.event;
 
+        // Pinch in progress
+        if(evt.event == STREAMPLOT_EVENT_PINCH && lastEvent == STREAMPLOT_EVENT_PINCH) {
+            float relDx = (eventDx - initPinchEventDx) / width;
+            float scaleFactor = 10.0f;
+            if(relDx > 0) {
+                scaleX = lastScaleX * (1 + scaleFactor*relDx);
+            }
+            else {
+                scaleX = lastScaleX / (1 - scaleFactor*relDx);
+            }
+            tranX = initPinchEventX - ((initPinchEventX-lastTranX) / lastScaleX * scaleX);
+            if(scaleX > 0.1f && scaleX < 10.0f) {
+                gMVPMatrix[12] = tranX;
+                gMVPMatrix[0] = scaleX;
+            }
+            LOGI("Pinch in Progress: %f", relDx);
+        }
+
+        // Pinch end
+        if(evt.event == STREAMPLOT_EVENT_UP && lastEvent == STREAMPLOT_EVENT_PINCH) {
+            freeze = 0;
+            LOGI("Pinch end");
+        }
+
+        // Plain touch release
+        if(evt.event == STREAMPLOT_EVENT_UP && lastEvent != STREAMPLOT_EVENT_PINCH) {
+            freeze = !freeze;
+        }
+        lastEvent = evt.event;
+    }
 
     // Add new data, if any.
     int i, j;
