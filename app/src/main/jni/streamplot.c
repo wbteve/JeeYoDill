@@ -323,7 +323,8 @@ void StreamplotMainLoop(int nDataPoints, float* data, StreamplotEvent evt)
                 scaleX = lastScaleX / (1 - scaleFactor*relDx);
             }
             tranX = initPinchEventX - ((initPinchEventX-lastTranX) / lastScaleX * scaleX);
-            if(scaleX > 0.1f && scaleX < 10.0f) {
+            //if(((-1.0f * scaleX + tranX) <= -1.0f) && ((1.0f * scaleX + tranX) >= 1.0f) && scaleX < STREAMPLOT_MAX_ZOOM) {
+            if(scaleX < STREAMPLOT_MAX_ZOOM) {
                 gMVPMatrix[12] = tranX;
                 gMVPMatrix[0] = scaleX;
             }
