@@ -328,6 +328,25 @@ void StreamplotMainLoop(int nDataPoints, float* data, StreamplotEvent evt)
                 gMVPMatrix[12] = tranX;
                 gMVPMatrix[0] = scaleX;
             }
+            scaleX = gMVPMatrix[0];
+            tranX = gMVPMatrix[12];
+
+            float xStart = (-1.0f - tranX) / scaleX;
+            float xEnd = (1.0f - tranX) / scaleX;
+
+            startPtr = (int)((xStart+1.0f)*STREAMPLOT_N_MAX_POINTS/2);
+            endPtr = (int)((xEnd+1.0f)*STREAMPLOT_N_MAX_POINTS/2);
+
+            if(startPtr < 0)
+                startPtr = 0;
+
+            if(endPtr > STREAMPLOT_N_MAX_POINTS)
+                endPtr = STREAMPLOT_N_MAX_POINTS;
+
+            if(ptr > endPtr || ptr < startPtr)
+                ptr = startPtr;
+
+
             LOGI("Pinch in Progress: %f", relDx);
         }
 
