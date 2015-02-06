@@ -46,7 +46,7 @@ extern "C" {
 #endif
 
 #define STREAMPLOT_N_MAX_PLOTS 10
-#define STREAMPLOT_N_MAX_POINTS 10000
+#define STREAMPLOT_N_MAX_POINTS 3200
 
 #define STREAMPLOT_EPS 1e-6
 

@@ -30,9 +30,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "streamplot.h"
 
-int nPlots = 1;
-int N = 1600; // Number of data points
-int ptr = 0; // pointer to line. goes from 0 to N
+
 
 typedef struct Streamplot {
     GLfloat color[4];
@@ -40,12 +38,16 @@ typedef struct Streamplot {
     GLfloat data[4*STREAMPLOT_N_MAX_POINTS];
 } Streamplot;
 
+int nPlots;
 int freeze = 0;
 int width, height;
 int lastEvent;
 float initPinchEventDx = 0;
 float initPinchEventX = 0;
 float lastTranX, lastScaleX;
+int startPtr = STREAMPLOT_N_MAX_POINTS/2 - 800, endPtr = STREAMPLOT_N_MAX_POINTS/2 + 800;
+//int startPtr = 0, endPtr = STREAMPLOT_N_MAX_POINTS;
+int ptr;
 
 Streamplot plots[STREAMPLOT_N_MAX_PLOTS];
 
@@ -150,7 +152,7 @@ static void setScale() {
     float maxVal = -INFINITY, minVal = INFINITY, val, scaleY, tranY;
 
     for(i = 0;i < nPlots; i++) {
-        for(j = 0; j < N; j++) {
+        for(j = startPtr; j < endPtr; j++) {
             val = plots[i].data[4*j + 1];
             if(val > maxVal)
                 maxVal = val;
@@ -211,7 +213,7 @@ static void renderPlots() {
         glUniform4fv(gColorHandle, 1, plots[i].color);
         checkGlError("glUniform4fv");
 
-        glDrawArrays(GL_LINES, 0, 2*N);
+        glDrawArrays(GL_LINES, 0, 2*STREAMPLOT_N_MAX_POINTS);
         checkGlError("glDrawArrays");
 
         // Draw the marker point
@@ -239,6 +241,11 @@ void StreamplotInit(int numPlots, StreamplotType* plotTypes, int screenWidth, in
     height = h;
 
     nPlots = numPlots;
+    ptr = startPtr;
+
+    float scaleX = (float)STREAMPLOT_N_MAX_POINTS * 1.0f / (endPtr - startPtr);
+    gMVPMatrix[0] = scaleX;
+
     for(i = 0;i < nPlots; i++) {
         for(j = 0; j < 4; j++) {
             plots[i].color[j] = plotTypes[i].color[j];
@@ -246,8 +253,11 @@ void StreamplotInit(int numPlots, StreamplotType* plotTypes, int screenWidth, in
         plots[i].thickness = plotTypes[i].thickness;
 
         for(j = 0;j < STREAMPLOT_N_MAX_POINTS;j++) {
-            plots[i].data[4*j] = -1.0f + (j * 2.0f) / N;
-            plots[i].data[4*j + 2] = -1.0f + ((j+1) * 2.0f) / N;
+            plots[i].data[4*j] = -1.0f + (j * 2.0f) / STREAMPLOT_N_MAX_POINTS;
+            plots[i].data[4*j + 1] = 0.0f;
+
+            plots[i].data[4*j + 2] = -1.0f + ((j+1) * 2.0f) / STREAMPLOT_N_MAX_POINTS;
+            plots[i].data[4*j + 3] = 0.0f;
         }
     }
 
@@ -275,10 +285,19 @@ void StreamplotInit(int numPlots, StreamplotType* plotTypes, int screenWidth, in
     checkGlError("glViewport");
 }
 
+static void incrementPtr() {
+    ptr = ptr + 1;
+    if(ptr >= endPtr) {
+        ptr = startPtr;
+    }
+}
+
 void StreamplotMainLoop(int nDataPoints, float* data, StreamplotEvent evt)
 {
     // Process events, if any.
     if(evt.event != 0) {
+        LOGI("Event: %d", evt.event);
+
         float scaleX = gMVPMatrix[0];
         float tranX = gMVPMatrix[12];
         float eventDx = abs(evt.eventX0 - evt.eventX1);
@@ -329,23 +348,22 @@ void StreamplotMainLoop(int nDataPoints, float* data, StreamplotEvent evt)
     int nPoints = nDataPoints / nPlots;
 
     assert(nPlots*nPoints == nDataPoints);
-
-    clearScreen();
     if(!freeze) {
         for(i = 0;i < nPoints;i++) {
-            int localLastPtr = (ptr+i) % N;
-            int localPtr = (ptr+i+1) % N;
+            int localLastPtr = ptr;
+            incrementPtr();
+            int localPtr = ptr;
             for(j = 0; j < nPlots; j++) {
                 plots[j].data[localPtr*4 + 1] = plots[j].data[localLastPtr*4 + 3];
                 plots[j].data[localPtr*4 + 3] = data[i*nPlots + j];
             }
         }
-        ptr = (ptr + nPoints) % N;
     }
 
     // Adjust y-axis scaling
     setScale();
 
     // Draw the plots
+    clearScreen();
     renderPlots();
 }
