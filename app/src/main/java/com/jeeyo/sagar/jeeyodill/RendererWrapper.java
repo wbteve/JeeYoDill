@@ -74,7 +74,7 @@ public class RendererWrapper implements GLSurfaceView.Renderer {
         StreamplotType[] plotTypes = new StreamplotType[2];
 
         plotTypes[0] = new StreamplotType(StreamplotType.COLOR_RED);
-        plotTypes[1] = new StreamplotType(StreamplotType.COLOR_GREEN);
+        plotTypes[1] = new StreamplotType(StreamplotType.STYLE_POINT_1, StreamplotType.COLOR_GREEN, 1.0f);
 
         PlatformJNIWrapper.init(mActivity.getAssets(), width, height, plotTypes);
     }

@@ -38,6 +38,9 @@ public class StreamplotType {
     public static final int COLOR_YELLOW = 3;
     public static final int COLOR_RED = 4;
 
+    public static final int STYLE_LINE_1 = 1;
+    public static final int STYLE_POINT_1 = 2;
+
     public float mColorR;
     public float mColorG;
     public float mColorB;
@@ -47,14 +50,24 @@ public class StreamplotType {
     public int mStyle;
 
     public StreamplotType() {
-        mStyle = 0;
+        mStyle = STYLE_LINE_1;
         mThickness = 5.0f;
     }
 
     public StreamplotType(int color) {
         setColor(color);
-        mStyle = 0;
+        mStyle = STYLE_LINE_1;
         mThickness = 5.0f;
+    }
+    public StreamplotType(int style, int color) {
+        setColor(color);
+        mStyle = style;
+        mThickness = 5.0f;
+    }
+    public StreamplotType(int style, int color, float thickness) {
+        setColor(color);
+        mStyle = style;
+        mThickness = thickness;
     }
 
     public void setColor(int color) {

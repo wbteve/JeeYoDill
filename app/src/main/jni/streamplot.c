@@ -36,6 +36,7 @@ typedef struct Streamplot {
     GLfloat color[4];
     GLfloat thickness;
     GLfloat data[4*STREAMPLOT_N_MAX_POINTS];
+    GLint style;
 } Streamplot;
 
 int nPlots;
@@ -62,20 +63,22 @@ GLfloat gMVPMatrix[16] = {
 GLuint gProgram;
 
 GLuint gLineHandle;
+GLuint gPointSizeHandle;
 GLuint gMVPHandle;
 GLuint gColorHandle;
 
 
 static const char gVertexShader[] =
     "uniform mat4 u_MVPMatrix;\n"
+    "uniform float u_PointSize;\n"
     "attribute vec4 vPosition;\n"
     "void main() {\n"
     "  gl_Position = u_MVPMatrix * vPosition;\n"
-    "  gl_PointSize = 20.0f;\n"
+    "  gl_PointSize = u_PointSize;\n"
     "}\n";
 
 static const char gFragmentShader[] =
-    "precision mediump float;\n"
+    "precision lowp float;\n"
     "uniform vec4 u_Color;\n"
     "void main() {\n"
     "  gl_FragColor = u_Color;\n"
@@ -154,10 +157,12 @@ static void setYScale() {
     for(i = 0;i < nPlots; i++) {
         for(j = startPtr; j < endPtr; j++) {
             val = plots[i].data[4*j + 1];
-            if(val > maxVal)
-                maxVal = val;
-            if(val < minVal)
-                minVal = val;
+            if(val != INFINITY) {
+                if(val > maxVal)
+                    maxVal = val;
+                if(val < minVal)
+                    minVal = val;
+            }
         }
     }
 
@@ -210,10 +215,18 @@ static void renderPlots() {
         glUniformMatrix4fv(gMVPHandle, 1, GL_FALSE, gMVPMatrix);
         checkGlError("glUniformMatrix4fv");
 
+        glUniform1f(gPointSizeHandle, plots[i].thickness);
+        checkGlError("glUniform1f");
+
         glUniform4fv(gColorHandle, 1, plots[i].color);
         checkGlError("glUniform4fv");
 
-        glDrawArrays(GL_LINES, 0, 2*STREAMPLOT_N_MAX_POINTS);
+        if(plots[i].style == STREAMPLOT_STYLE_2) {
+            glDrawArrays(GL_POINTS, 0, 2*STREAMPLOT_N_MAX_POINTS);
+        }
+        else {
+            glDrawArrays(GL_LINES, 0, 2*STREAMPLOT_N_MAX_POINTS);
+        }
         checkGlError("glDrawArrays");
 
         // Draw the marker point
@@ -226,6 +239,9 @@ static void renderPlots() {
 
         glUniformMatrix4fv(gMVPHandle, 1, GL_FALSE, gMVPMatrix);
         checkGlError("glUniformMatrix4fv");
+
+        glUniform1f(gPointSizeHandle, 20.0f);
+        checkGlError("glUniform1f");
 
         glDrawArrays(GL_POINTS, 0, 1);
         checkGlError("glDrawArrays");
@@ -251,6 +267,7 @@ void StreamplotInit(int numPlots, StreamplotType* plotTypes, int screenWidth, in
             plots[i].color[j] = plotTypes[i].color[j];
         }
         plots[i].thickness = plotTypes[i].thickness;
+        plots[i].style = plotTypes[i].style;
 
         for(j = 0;j < STREAMPLOT_N_MAX_POINTS;j++) {
             plots[i].data[4*j] = -1.0f + (j * 2.0f) / STREAMPLOT_N_MAX_POINTS;
@@ -276,6 +293,9 @@ void StreamplotInit(int numPlots, StreamplotType* plotTypes, int screenWidth, in
     checkGlError("glGetUniformLocation");
 
     gColorHandle = glGetUniformLocation(gProgram, "u_Color");
+    checkGlError("glGetUniformLocation");
+
+    gPointSizeHandle = glGetUniformLocation(gProgram, "u_PointSize");
     checkGlError("glGetUniformLocation");
 
     LOGI("glGetAttribLocation(\"vPosition\") = %d\n",
