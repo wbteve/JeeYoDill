@@ -446,8 +446,6 @@ static void processEvents(StreamplotEvent evt) {
         }
 
         // Plain touch release
-        LOGI("X0: %f", evt.eventX0);
-        LOGI("Y0: %f", evt.eventY0);
         if(evt.event == STREAMPLOT_EVENT_UP
            && lastEvent != STREAMPLOT_EVENT_PINCH
            && evt.eventX0/width < 0.2

@@ -209,6 +209,7 @@ public class MainActivity extends Activity {
             Log.v(TAG, "Disconnecting from GATT");
             mGatt.disconnect();
         }
+        mBluetoothAdapter.stopLeScan(mLeScanCallback);
     }
 
     @Override
