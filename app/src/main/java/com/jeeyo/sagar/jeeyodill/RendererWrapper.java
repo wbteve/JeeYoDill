@@ -72,45 +72,14 @@ public class RendererWrapper implements GLSurfaceView.Renderer {
 
     }
 
-    private int loadTexture(int resourceId) {
-        int[] textureHandle = new int[1];
-
-        GLES20.glGenTextures(1, textureHandle, 0);
-
-        final BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inScaled = false;   // No pre-scaling
-
-        // Read in the resource
-        final Bitmap bitmap = BitmapFactory.decodeResource(mActivity.getResources(), resourceId, options);
-
-        // Bind to the texture in OpenGL
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureHandle[0]);
-
-        // Set filtering
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST);
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_NEAREST);
-
-        // Load the bitmap into the bound texture.
-        GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0);
-
-        // Recycle the bitmap, since its data has been loaded into OpenGL.
-        bitmap.recycle();
-
-        return textureHandle[0];
-    }
-
     @Override
     public void onSurfaceChanged(GL10 gl, int width, int height) {
-        int[] resHandles = new int[2];
-        resHandles[0] = loadTexture(R.drawable.play_image);
-        resHandles[1] = loadTexture(R.drawable.pause_image);
-
         StreamplotType[] plotTypes = new StreamplotType[2];
 
         plotTypes[0] = new StreamplotType(StreamplotType.COLOR_RED);
         plotTypes[1] = new StreamplotType(StreamplotType.STYLE_POINT_1, StreamplotType.COLOR_GREEN, 2.0f);
 
-        PlatformJNIWrapper.init(mActivity.getAssets(), width, height, plotTypes, resHandles);
+        PlatformJNIWrapper.StreamplotInit(mActivity, width, height, plotTypes, false);
     }
 
     @Override
@@ -118,7 +87,7 @@ public class RendererWrapper implements GLSurfaceView.Renderer {
         int size = mQueue.size();
         float[] data = new float[size];
         for(int i = 0; i < size; i++) {
-            data[size] = mQueue.poll();
+            data[i] = mQueue.poll();
         }
         //PlatformJNIWrapper.mainLoop(data);
         PlatformJNIWrapper.mainLoop(testData(), mEvent, mEventX0, mEventY0, mEventX1, mEventY1);

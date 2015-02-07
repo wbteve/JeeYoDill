@@ -47,6 +47,7 @@ float initPinchEventDx = 0;
 float initPinchEventX = 0;
 float lastTranX, lastScaleX;
 int startPtr = STREAMPLOT_N_MAX_POINTS/2 - 800, endPtr = STREAMPLOT_N_MAX_POINTS/2 + 800;
+int showPlayPause;
 //int startPtr = 0, endPtr = STREAMPLOT_N_MAX_POINTS;
 int ptr;
 
@@ -284,10 +285,14 @@ static void renderPlots() {
     }
 }
 
-void StreamplotInit(int numPlots, StreamplotType* plotTypes, int screenWidth, int screenHeight, int* resHandles) {
+void StreamplotInit(int numPlots, StreamplotType* plotTypes, int screenWidth, int screenHeight, int showPlayPauseButton, int* resHandles) {
     int i, j;
     int w = screenWidth;
     int h = screenHeight;
+
+    freeze = 0;
+
+    showPlayPause = showPlayPauseButton;
 
     gPlayButtonHandle = resHandles[0];
     gPauseButtonHandle = resHandles[1];
@@ -446,10 +451,8 @@ static void processEvents(StreamplotEvent evt) {
         }
 
         // Plain touch release
-        if(evt.event == STREAMPLOT_EVENT_UP
-           && lastEvent != STREAMPLOT_EVENT_PINCH
-           && evt.eventX0/width < 0.2
-           && evt.eventY0/height > 0.8)
+        if(evt.event == STREAMPLOT_EVENT_UP && lastEvent != STREAMPLOT_EVENT_PINCH &&
+           ((showPlayPause && evt.eventX0/width < 0.2 && evt.eventY0/height > 0.8) || !showPlayPause))
         {
             freeze = !freeze;
         }
@@ -519,5 +522,6 @@ void StreamplotMainLoop(int nDataPoints, float* data, StreamplotEvent evt)
     clearScreen();
     renderPlots();
 
-    renderPlayPauseButton();
+    if(showPlayPause)
+        renderPlayPauseButton();
 }

@@ -52,6 +52,7 @@ Java_com_jeeyo_sagar_jeeyodill_PlatformJNIWrapper_init(JNIEnv* env, jclass this,
                                                        jobject jAssetManager,
                                                        int width, int height,
                                                        jobjectArray jPlotTypes,
+                                                       jint showPlayPauseButton,
                                                        jintArray resHandles);
 
 JNIEXPORT void JNICALL

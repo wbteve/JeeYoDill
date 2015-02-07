@@ -36,6 +36,7 @@ Java_com_jeeyo_sagar_jeeyodill_PlatformJNIWrapper_init(JNIEnv* env, jclass this,
                                                        jobject jAssetManager,
                                                        int width, int height,
                                                        jobjectArray jPlotTypes,
+                                                       jint showPlayPauseButton,
                                                        jintArray jResHandles)
 {
     int i;
@@ -59,7 +60,7 @@ Java_com_jeeyo_sagar_jeeyodill_PlatformJNIWrapper_init(JNIEnv* env, jclass this,
 
     jint* resHandles = (*env)->GetIntArrayElements(env, jResHandles, 0);
 
-    StreamplotInit(nPlots, plotTypes, width, height, resHandles);
+    StreamplotInit(nPlots, plotTypes, width, height, showPlayPauseButton, resHandles);
 
     (*env)->ReleaseIntArrayElements(env, jResHandles, resHandles, 0);
 

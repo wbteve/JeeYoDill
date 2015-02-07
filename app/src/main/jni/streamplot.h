@@ -79,7 +79,7 @@ typedef struct StreamplotEvent {
     float eventX1, eventY1;
 } StreamplotEvent;
 
-void StreamplotInit(int numPlots, StreamplotType* plotTypes, int screenWidth, int screenHeight, int* resHandles);
+void StreamplotInit(int numPlots, StreamplotType* plotTypes, int screenWidth, int screenHeight, int showPlayPauseButton, int* resHandles);
 
 
 // data is layed out like:

@@ -30,10 +30,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.jeeyo.sagar.jeeyodill;
 
 
+import android.content.Context;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.opengl.GLES20;
+import android.opengl.GLUtils;
 
 /**
  * Created by sagar on 28/1/15.
@@ -43,7 +45,45 @@ public class PlatformJNIWrapper {
         System.loadLibrary("streamplot");
     }
 
-    public static native void init(AssetManager assetManager, int width, int height, StreamplotType[] plotTypes, int[] resHandles);
+    public static void StreamplotInit(Context context, int width, int height, StreamplotType[] plotTypes, Boolean showPlayPauseButton) {
+        int[] resHandles = new int[2];
+        resHandles[0] = loadTexture(context, R.drawable.play_image);
+        resHandles[1] = loadTexture(context, R.drawable.pause_image);
+
+        if(showPlayPauseButton)
+            init(context.getAssets(), width, height, plotTypes, 1, resHandles);
+        else
+            init(context.getAssets(), width, height, plotTypes, 0, resHandles);
+    }
+
+    private static native void init(AssetManager assetManager, int width, int height, StreamplotType[] plotTypes, int showPlayPauseButton, int[] resHandles);
     public static native void mainLoop(float[] data, int event, float eventX0, float eventY0, float eventX1, float eventY1);
+
+    private static int loadTexture(Context context, int resourceId) {
+        int[] textureHandle = new int[1];
+
+        GLES20.glGenTextures(1, textureHandle, 0);
+
+        final BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inScaled = false;   // No pre-scaling
+
+        // Read in the resource
+        final Bitmap bitmap = BitmapFactory.decodeResource(context.getResources(), resourceId, options);
+
+        // Bind to the texture in OpenGL
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureHandle[0]);
+
+        // Set filtering
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_NEAREST);
+
+        // Load the bitmap into the bound texture.
+        GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0);
+
+        // Recycle the bitmap, since its data has been loaded into OpenGL.
+        bitmap.recycle();
+
+        return textureHandle[0];
+    }
 
 }
