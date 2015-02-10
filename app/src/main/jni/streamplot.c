@@ -107,11 +107,11 @@ static const char gFragmentShader[] =
 
 static const char tVertexShader[] =
     "attribute vec4 vPosition;\n"
-    "attribute vec4 vCoordinate;\n"
+    "attribute vec2 vCoordinate;\n"
     "varying vec2 textureCoordinate;\n"
     "void main() {\n"
     "    gl_Position = vPosition;\n"
-    "    textureCoordinate = vCoordinate.xy;\n"
+    "    textureCoordinate = vCoordinate;\n"
     "}\n";
 
 static const char tFragmentShader[] =
@@ -301,11 +301,14 @@ static void StreamplotPrint(const char* str, float locX, float locY) {
     GLfloat fontPositionVertices[8];
     GLfloat fontTextureVertices[8];
 
+    float aspectRatio = width * 1.0f / height;
     float bottomX = locX;
     float bottomY = locY;
-    float deltaX = 0.2f;
     float deltaY = 0.2f;
+    float deltaX = 0.07f;
 
+
+    //convert -background none -fill red -font LiberationMono-Regular.ttf -pointsize 100 label:"ABCDEFGH\nIJKLMNOP\nQRSTUVWX\nYZ012345\n6789" font.png
     while(*str != '\0') {
         fillFontPositionVertices(fontPositionVertices, bottomX, bottomY, deltaX, deltaY);
         int s=0, m=0;
@@ -320,8 +323,8 @@ static void StreamplotPrint(const char* str, float locX, float locY) {
             m = 3 + (c - 48 + 2) / 8;
         }
         float startx = s / 8.0f;
-        float starty = m / 8.0f;
-        fillFontTextureVertices(fontTextureVertices, startx, starty, 0.125f, 0.125f);
+        float starty = m / 5.0f;
+        fillFontTextureVertices(fontTextureVertices, startx, starty, 0.125f, 0.2f);
 
         glUseProgram(gProgramTexture);
         checkGlError("glUseProgram");
@@ -351,8 +354,9 @@ static void StreamplotPrint(const char* str, float locX, float locY) {
         checkGlError("glDrawArrays");
 
         str++;
-        bottomX += 0.2f;
+        bottomX += deltaX;
     }
+
 }
 void StreamplotInit(int numPlots, StreamplotType* plotTypes, int screenWidth, int screenHeight, int showPlayPauseButton, int* resHandles) {
     int i, j;
@@ -595,5 +599,5 @@ void StreamplotMainLoop(int nDataPoints, float* data, StreamplotEvent evt)
     if(showPlayPause)
         renderPlayPauseButton();
 
-    StreamplotPrint("Y6", -1.0f, 0.8f);
+    StreamplotPrint("72", -1.0f, 0.8f);
 }
