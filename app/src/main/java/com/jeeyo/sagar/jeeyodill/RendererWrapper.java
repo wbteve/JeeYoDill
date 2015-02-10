@@ -74,12 +74,47 @@ public class RendererWrapper implements GLSurfaceView.Renderer {
 
     @Override
     public void onSurfaceChanged(GL10 gl, int width, int height) {
-        StreamplotType[] plotTypes = new StreamplotType[2];
+        StreamplotType[] plotTypes = new StreamplotType[1];
 
         plotTypes[0] = new StreamplotType(StreamplotType.COLOR_RED);
-        plotTypes[1] = new StreamplotType(StreamplotType.STYLE_POINT_1, StreamplotType.COLOR_GREEN, 2.0f);
+        //plotTypes[1] = new StreamplotType(StreamplotType.STYLE_POINT_1, StreamplotType.COLOR_GREEN, 2.0f);
 
         PlatformJNIWrapper.StreamplotInit(mActivity, width, height, plotTypes, false);
+    }
+    private static int ECG_SAMPLE_RATE = 400;
+    private float mECGLastData;
+    private float mECGThresh = 100;
+    private Boolean mECGmode = false;
+    private float mECGmaxHiPass = 0;
+
+    private int mECGLastMaxidx = 0;
+    private int mECGMaxidx = 0;
+    private int mECGidx = 0;
+    private int mECGHr = 0;
+    public void processData(float data) {
+        float hiPass = Math.abs(data - mECGLastData);
+        if (hiPass > mECGThresh) {
+            mECGmode = true;
+            if(hiPass > mECGmaxHiPass) {
+                mECGmaxHiPass = hiPass;
+                mECGMaxidx = mECGidx;
+            }
+        } else {
+            if(mECGmode) {
+                mECGThresh = mECGmaxHiPass;
+                int hr = ECG_SAMPLE_RATE * 60 /(mECGMaxidx - mECGLastMaxidx + 1);
+                if(hr > 30 && hr < 250) {
+                    mECGHr = hr;
+                }
+                mECGLastMaxidx = mECGMaxidx;
+                mECGmaxHiPass = 0;
+            }
+            mECGThresh = mECGThresh * 0.998f;
+            mECGmode = false;
+        }
+
+        mECGidx = mECGidx + 1;
+        mECGLastData = data;
     }
 
     @Override
@@ -87,10 +122,11 @@ public class RendererWrapper implements GLSurfaceView.Renderer {
         int size = mQueue.size();
         float[] data = new float[size];
         for(int i = 0; i < size; i++) {
-            data[i] = mQueue.poll();
+            data[i] = -mQueue.poll();
+            processData(data[i]);
         }
-        //PlatformJNIWrapper.mainLoop(data, mEvent, mEventX0, mEventY0, mEventX1, mEventY1);
-        PlatformJNIWrapper.mainLoop(testData(), mEvent, mEventX0, mEventY0, mEventX1, mEventY1, "97");
+        PlatformJNIWrapper.mainLoop(data, mEvent, mEventX0, mEventY0, mEventX1, mEventY1, String.valueOf(mECGHr));
+        //PlatformJNIWrapper.mainLoop(testData(), mEvent, mEventX0, mEventY0, mEventX1, mEventY1, "97");
         mEvent = 0; // clear the event
     }
 

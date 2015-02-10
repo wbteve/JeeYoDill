@@ -599,5 +599,5 @@ void StreamplotMainLoop(int nDataPoints, float* data, StreamplotEvent evt, char*
     if(showPlayPause)
         renderPlayPauseButton();
 
-    StreamplotPrint(strLeftTop, -1.0f, 0.8f);
+    StreamplotPrint(strLeftTop, -0.96f, 0.76f);
 }
