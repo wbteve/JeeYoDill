@@ -83,6 +83,7 @@ GLuint gColorHandle;
 
 GLuint gPauseButtonHandle;
 GLuint gPlayButtonHandle;
+GLuint gFontHandle;
 
 GLuint gTexturePositionHandle;
 GLuint gTextureCoordinateHandle;
@@ -284,7 +285,75 @@ static void renderPlots() {
         checkGlError("glDrawArrays");
     }
 }
+static void fillFontPositionVertices(float* fontPositionVertices, float bottomX, float bottomY, float deltaX, float deltaY) {
+    fontPositionVertices[0] = bottomX+deltaX;   fontPositionVertices[1] = bottomY;
+    fontPositionVertices[2] = bottomX;          fontPositionVertices[3] = bottomY;
+    fontPositionVertices[4] = bottomX+deltaX;   fontPositionVertices[5] = bottomY+deltaY;
+    fontPositionVertices[6] = bottomX;          fontPositionVertices[7] = bottomY+deltaY;
+}
+static void fillFontTextureVertices(float* fontTextureVertices, float xStart, float yStart, float xStep, float yStep) {
+    fontTextureVertices[0] = xStart + xStep;    fontTextureVertices[1] = yStart + yStep;
+    fontTextureVertices[2] = xStart;            fontTextureVertices[3] = yStart + yStep;
+    fontTextureVertices[4] = xStart + xStep;    fontTextureVertices[5] = yStart;
+    fontTextureVertices[6] = xStart;            fontTextureVertices[7] = yStart;
+}
+static void StreamplotPrint(const char* str, float locX, float locY) {
+    GLfloat fontPositionVertices[8];
+    GLfloat fontTextureVertices[8];
 
+    float bottomX = locX;
+    float bottomY = locY;
+    float deltaX = 0.2f;
+    float deltaY = 0.2f;
+
+    while(*str != '\0') {
+        fillFontPositionVertices(fontPositionVertices, bottomX, bottomY, deltaX, deltaY);
+        int s=0, m=0;
+        char c = *str;
+        if(c >= 65 && c <= 90) {
+            s = (c-65) % 8;
+            m = (c-65) / 8;
+
+        }
+        if(c >= 48 && c <= 56) {
+            s = (c - 48 + 2) % 8;
+            m = 3 + (c - 48 + 2) / 8;
+        }
+        float startx = s / 8.0f;
+        float starty = m / 8.0f;
+        fillFontTextureVertices(fontTextureVertices, startx, starty, 0.125f, 0.125f);
+
+        glUseProgram(gProgramTexture);
+        checkGlError("glUseProgram");
+
+        glActiveTexture(GL_TEXTURE0);
+        checkGlError("glActiveTexture");
+
+        glBindTexture(GL_TEXTURE_2D, gFontHandle);
+        checkGlError("glBindTexture");
+
+        glUniform1i(gTextureUniformSamplerHandle, 0);
+        checkGlError("glUniform1i");
+
+        glVertexAttribPointer(gTexturePositionHandle, 2, GL_FLOAT, GL_FALSE, 0, fontPositionVertices);
+        checkGlError("glVertexAttribPointer");
+
+        glEnableVertexAttribArray(gTexturePositionHandle);
+        checkGlError("glEnableVertexAttribArray");
+
+        glVertexAttribPointer(gTextureCoordinateHandle, 2, GL_FLOAT, GL_FALSE, 0, fontTextureVertices);
+        checkGlError("glVertexAttribPointer");
+
+        glEnableVertexAttribArray(gTextureCoordinateHandle);
+        checkGlError("glEnableVertexAttribArray");
+
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+        checkGlError("glDrawArrays");
+
+        str++;
+        bottomX += 0.2f;
+    }
+}
 void StreamplotInit(int numPlots, StreamplotType* plotTypes, int screenWidth, int screenHeight, int showPlayPauseButton, int* resHandles) {
     int i, j;
     int w = screenWidth;
@@ -296,6 +365,7 @@ void StreamplotInit(int numPlots, StreamplotType* plotTypes, int screenWidth, in
 
     gPlayButtonHandle = resHandles[0];
     gPauseButtonHandle = resHandles[1];
+    gFontHandle = resHandles[2];
 
     width = w;
     height = h;
@@ -524,4 +594,6 @@ void StreamplotMainLoop(int nDataPoints, float* data, StreamplotEvent evt)
 
     if(showPlayPause)
         renderPlayPauseButton();
+
+    StreamplotPrint("Y6", -1.0f, 0.8f);
 }
