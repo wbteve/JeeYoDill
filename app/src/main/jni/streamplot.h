@@ -90,7 +90,7 @@ void StreamplotInit(int numPlots, StreamplotType* plotTypes, int screenWidth, in
 //    (ch0_data3, ch_1_data3, ch_2_data3),
 // ]
 // nDataPoints = 12 in the above case
-void StreamplotMainLoop(int nDataPoints, float* data, StreamplotEvent evt);
+void StreamplotMainLoop(int nDataPoints, float* data, StreamplotEvent evt, char* strLeftTop);
 
 #ifdef __cplusplus
 }

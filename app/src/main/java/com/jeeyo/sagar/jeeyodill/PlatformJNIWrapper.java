@@ -58,7 +58,7 @@ public class PlatformJNIWrapper {
     }
 
     private static native void init(AssetManager assetManager, int width, int height, StreamplotType[] plotTypes, int showPlayPauseButton, int[] resHandles);
-    public static native void mainLoop(float[] data, int event, float eventX0, float eventY0, float eventX1, float eventY1);
+    public static native void mainLoop(float[] data, int event, float eventX0, float eventY0, float eventX1, float eventY1, String leftTop);
 
     private static int loadTexture(Context context, int resourceId) {
         int[] textureHandle = new int[1];

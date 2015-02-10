@@ -90,7 +90,7 @@ public class RendererWrapper implements GLSurfaceView.Renderer {
             data[i] = mQueue.poll();
         }
         //PlatformJNIWrapper.mainLoop(data, mEvent, mEventX0, mEventY0, mEventX1, mEventY1);
-        PlatformJNIWrapper.mainLoop(testData(), mEvent, mEventX0, mEventY0, mEventX1, mEventY1);
+        PlatformJNIWrapper.mainLoop(testData(), mEvent, mEventX0, mEventY0, mEventX1, mEventY1, "97");
         mEvent = 0; // clear the event
     }
 

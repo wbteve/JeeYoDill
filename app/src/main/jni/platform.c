@@ -70,17 +70,21 @@ JNIEXPORT void JNICALL
 Java_com_jeeyo_sagar_jeeyodill_PlatformJNIWrapper_mainLoop(JNIEnv* env, jclass this,
                                                            jfloatArray jdata,
                                                            jint event, jfloat evtX0, jfloat evtY0,
-                                                           jfloat evtX1, jfloat evtY1)
+                                                           jfloat evtX1, jfloat evtY1,
+                                                           jstring leftTop)
 {
     int nDataPoints = (*env)->GetArrayLength(env, jdata);
     jfloat* data = (*env)->GetFloatArrayElements(env, jdata, 0);
 
+    const char *strLeftTop = (*env)->GetStringUTFChars(env, leftTop, 0);
+
     StreamplotEvent evt = {
         event, evtX0, evtY0, evtX1, evtY1
     };
-    StreamplotMainLoop(nDataPoints, data, evt);
+    StreamplotMainLoop(nDataPoints, data, evt, strLeftTop);
 
     (*env)->ReleaseFloatArrayElements(env, jdata, data, 0);
+    (*env)->ReleaseStringUTFChars(env, leftTop, strLeftTop);
 }
 
 void printGLString(const char *name, GLenum s) {

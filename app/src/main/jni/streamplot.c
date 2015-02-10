@@ -318,7 +318,7 @@ static void StreamplotPrint(const char* str, float locX, float locY) {
             m = (c-65) / 8;
 
         }
-        if(c >= 48 && c <= 56) {
+        if(c >= 48 && c <= 57) {
             s = (c - 48 + 2) % 8;
             m = 3 + (c - 48 + 2) / 8;
         }
@@ -585,7 +585,7 @@ static void renderPlayPauseButton()
     checkGlError("glDrawArrays");
 }
 
-void StreamplotMainLoop(int nDataPoints, float* data, StreamplotEvent evt)
+void StreamplotMainLoop(int nDataPoints, float* data, StreamplotEvent evt, char* strLeftTop)
 {
     processEvents(evt);
 
@@ -599,5 +599,5 @@ void StreamplotMainLoop(int nDataPoints, float* data, StreamplotEvent evt)
     if(showPlayPause)
         renderPlayPauseButton();
 
-    StreamplotPrint("72", -1.0f, 0.8f);
+    StreamplotPrint(strLeftTop, -1.0f, 0.8f);
 }
