@@ -91,6 +91,7 @@ public class RendererWrapper implements GLSurfaceView.Renderer {
     private int mECGMaxidx = 0;
     private int mECGidx = 0;
     private int mECGHr = 0;
+
     public void processData(float data) {
         float hiPass = Math.abs(data - mECGLastData);
         if (hiPass > mECGThresh) {
@@ -99,7 +100,7 @@ public class RendererWrapper implements GLSurfaceView.Renderer {
                 mECGmaxHiPass = hiPass;
                 mECGMaxidx = mECGidx;
             }
-        } else {
+        } else if(hiPass < mECGThresh/2) {
             if(mECGmode) {
                 mECGThresh = mECGmaxHiPass;
                 int hr = ECG_SAMPLE_RATE * 60 /(mECGMaxidx - mECGLastMaxidx + 1);

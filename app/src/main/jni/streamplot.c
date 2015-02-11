@@ -360,6 +360,25 @@ static void StreamplotPrint(const char* str, float locX, float locY) {
 }
 void StreamplotInit(int numPlots, StreamplotType* plotTypes, int screenWidth, int screenHeight, int showPlayPauseButton, int* resHandles) {
     int i, j;
+    // Init global vars
+    freeze = 0;
+    lastEvent = 0;
+    initPinchEventDx = 0;
+    initPinchEventX = 0;
+    lastTranX = 0.0f;
+    lastScaleX = 0.0f;
+    startPtr = STREAMPLOT_N_MAX_POINTS/2 - 800;
+    endPtr = STREAMPLOT_N_MAX_POINTS/2 + 800;
+    showPlayPause = 0;
+    for(i = 0; i < 16; i++) {
+        gMVPMatrix[i] = 0.0f;
+    }
+    gMVPMatrix[0] = 1.0f;
+    gMVPMatrix[5] = 1.0f;
+    gMVPMatrix[10] = 1.0f;
+    gMVPMatrix[15] = 1.0f;
+
+    // Start usual init now
     int w = screenWidth;
     int h = screenHeight;
 
