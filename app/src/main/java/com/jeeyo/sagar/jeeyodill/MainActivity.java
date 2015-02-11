@@ -39,6 +39,7 @@ import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothManager;
 import android.content.Intent;
 import android.opengl.GLSurfaceView;
+import android.os.Build;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -118,6 +119,9 @@ public class MainActivity extends Activity {
                 }
             }
             if(newState == BluetoothAdapter.STATE_CONNECTED) {
+                if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    gatt.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH);
+                }
                 Log.v(TAG, "Connected to BLE device.");
                 gatt.discoverServices();
             }
