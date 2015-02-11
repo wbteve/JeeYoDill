@@ -117,13 +117,13 @@ public class RendererWrapper implements GLSurfaceView.Renderer {
         mECGidx = mECGidx + 1;
         mECGLastData = data;
     }
-
     @Override
     public void onDrawFrame(GL10 gl) {
         int size = mQueue.size();
         float[] data = new float[size];
         for(int i = 0; i < size; i++) {
             data[i] = -mQueue.poll();
+            Log.d("BLE", String.valueOf(data[i]));
             processData(data[i]);
         }
         PlatformJNIWrapper.mainLoop(data, mEvent, mEventX0, mEventY0, mEventX1, mEventY1, String.valueOf(mECGHr));

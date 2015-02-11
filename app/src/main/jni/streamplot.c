@@ -48,6 +48,7 @@ float initPinchEventX = 0;
 float lastTranX, lastScaleX;
 int startPtr = STREAMPLOT_N_MAX_POINTS/2 - 800, endPtr = STREAMPLOT_N_MAX_POINTS/2 + 800;
 int showPlayPause;
+int lastFreeze;
 //int startPtr = 0, endPtr = STREAMPLOT_N_MAX_POINTS;
 int ptr;
 
@@ -218,8 +219,15 @@ static void setYScale() {
         ((range*scaleY) < (2.0f * STREAMPLOT_SCALE_LO_THRESH)))
     {
         scaleY = 2.0f * STREAMPLOT_SCALE_TARG_THRESH / (range + STREAMPLOT_EPS);
+        if(maxVal == minVal) {
+            scaleY = 1;
+        }
         tranY = -1.0f * scaleY * avg;
     }
+    LOGI("scaleY: %f", scaleY);
+    LOGI("tranY: %f", tranY);
+    LOGI("minVal: %f", minVal);
+    LOGI("maxVal: %f", maxVal);
     gMVPMatrix[5] = scaleY;
     gMVPMatrix[13] = tranY;
 }
@@ -383,6 +391,7 @@ void StreamplotInit(int numPlots, StreamplotType* plotTypes, int screenWidth, in
     int h = screenHeight;
 
     freeze = 0;
+    lastFreeze = 0;
 
     showPlayPause = showPlayPauseButton;
 
@@ -477,6 +486,7 @@ static void processEvents(StreamplotEvent evt) {
         if(evt.event == STREAMPLOT_EVENT_PINCH && lastEvent != STREAMPLOT_EVENT_PINCH) {
             initPinchEventX = -1 + (evt.eventX0 + evt.eventX1) / width;
             initPinchEventDx = eventDx;
+            lastFreeze = freeze;
             freeze = 1;
             lastScaleX = scaleX;
             lastTranX = tranX;
@@ -539,7 +549,7 @@ static void processEvents(StreamplotEvent evt) {
 
         // Pinch end
         if(evt.event == STREAMPLOT_EVENT_UP && lastEvent == STREAMPLOT_EVENT_PINCH) {
-            freeze = 0;
+            freeze = lastFreeze;
             //LOGI("Pinch end");
         }
 
