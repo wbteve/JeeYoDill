@@ -123,12 +123,12 @@ public class RendererWrapper implements GLSurfaceView.Renderer {
         float[] data = new float[size];
         for(int i = 0; i < size; i++) {
             data[i] = -mQueue.poll();
-            Log.d("BLE", String.valueOf(data[i]));
+            //Log.d("BLE", String.valueOf(data[i]));
             processData(data[i]);
         }
-        //PlatformJNIWrapper.mainLoop(data, mEvent, mEventX0, mEventY0, mEventX1, mEventY1, String.valueOf(mECGHr));
+        PlatformJNIWrapper.mainLoop(data, mEvent, mEventX0, mEventY0, mEventX1, mEventY1, String.valueOf(mECGHr));
         //PlatformJNIWrapper.mainLoop(testData(), mEvent, mEventX0, mEventY0, mEventX1, mEventY1, "97");
-        PlatformJNIWrapper.mainLoop(testData2(), mEvent, mEventX0, mEventY0, mEventX1, mEventY1, "87");
+        //PlatformJNIWrapper.mainLoop(testData2(), mEvent, mEventX0, mEventY0, mEventX1, mEventY1, "87");
         mEvent = 0; // clear the event
     }
 
