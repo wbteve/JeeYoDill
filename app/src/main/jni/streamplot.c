@@ -600,7 +600,7 @@ static void processEvents(StreamplotEvent evt) {
             if(doubleTapCountDown > 0) {
                 gridEnabled = !gridEnabled;
             }
-            doubleTapCountDown = 25;
+            doubleTapCountDown = 18;
         }
         lastEvent = evt.event;
     }
