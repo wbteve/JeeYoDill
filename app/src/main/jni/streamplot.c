@@ -38,12 +38,6 @@ typedef struct Streamplot {
     GLint style;
 } Streamplot;
 
-typedef struct GridLine {
-    GLfloat data[4];
-    GLfloat color[4];
-    GLfloat thickness;
-} GridLine;
-
 int nPlots;
 int freeze = 0;
 int gridEnabled;
@@ -60,8 +54,6 @@ int lastFreeze;
 int ptr;
 
 Streamplot plots[STREAMPLOT_N_MAX_PLOTS];
-GridLine gridLinesH[STREAMPLOT_N_H_GRID_LINES];
-GridLine gridLinesV[STREAMPLOT_N_V_GRID_LINES];
 
 GLfloat gMVPMatrix[16] = {
         1.0f, 0.0f, 0.0f, 0.0f,
@@ -74,17 +66,24 @@ static GLfloat playPauseVertices[] = {
     -1.0f, -1.0f,
     -0.8f, -1.0f,
     -1.0f, -0.8f,
-    -0.8f, -0.8f,
+    -0.8f, -0.8f
 };
 
 static GLfloat playPauseTextureVertices[] = {
     0.0f,  0.0f,
     1.0f, 0.0f,
     0.0f,  1.0f,
-    1.0f, 1.0f,
+    1.0f, 1.0f
 };
 
-GLuint gProgram, gProgramTexture;
+static GLfloat gridTextureVertices[] = {
+    0.0f,  0.0f,
+    1.0f, 0.0f,
+    0.0f,  1.0f,
+    1.0f, 1.0f
+};
+
+GLuint gProgram, gProgramTexture, gGridProgramTexture;
 
 GLuint gLineHandle;
 GLuint gPointSizeHandle;
@@ -94,10 +93,16 @@ GLuint gColorHandle;
 GLuint gPauseButtonHandle;
 GLuint gPlayButtonHandle;
 GLuint gFontHandle;
+GLuint gGridHandle;
 
 GLuint gTexturePositionHandle;
 GLuint gTextureCoordinateHandle;
 GLuint gTextureUniformSamplerHandle;
+
+GLuint gGridMVPHandle;
+GLuint gGridTexturePositionHandle;
+GLuint gGridTextureCoordinateHandle;
+GLuint gGridTextureUniformSamplerHandle;
 
 static const char gVertexShader[] =
     "uniform mat4 u_MVPMatrix;\n"
@@ -125,6 +130,24 @@ static const char tVertexShader[] =
     "}\n";
 
 static const char tFragmentShader[] =
+    "precision lowp float;\n"
+    "varying vec2 textureCoordinate;\n"
+    "uniform sampler2D u_Texture;\n"
+    "void main() {\n"
+    "    gl_FragColor = texture2D(u_Texture, textureCoordinate);\n"
+    "}\n";
+
+static const char gridVertexShader[] =
+    "uniform mat4 u_MVPMatrix;\n"
+    "attribute vec4 vPosition;\n"
+    "attribute vec2 vCoordinate;\n"
+    "varying vec2 textureCoordinate;\n"
+    "void main() {\n"
+    "    gl_Position = u_MVPMatrix * vPosition;\n"
+    "    textureCoordinate = vCoordinate;\n"
+    "}\n";
+
+static const char gridFragmentShader[] =
     "precision lowp float;\n"
     "varying vec2 textureCoordinate;\n"
     "uniform sampler2D u_Texture;\n"
@@ -405,6 +428,7 @@ void StreamplotInit(int numPlots, StreamplotType* plotTypes, int screenWidth, in
     gPlayButtonHandle = resHandles[0];
     gPauseButtonHandle = resHandles[1];
     gFontHandle = resHandles[2];
+    gGridHandle = resHandles[3];
 
     width = w;
     height = h;
@@ -434,42 +458,6 @@ void StreamplotInit(int numPlots, StreamplotType* plotTypes, int screenWidth, in
             plots[i].data[4*j + 3] = 0.0f;
         }
     }
-    for(i = 0; i < STREAMPLOT_N_H_GRID_LINES; i++) {
-        float yLevel = -16384.0f + (32768.0f/STREAMPLOT_N_H_GRID_LINES) * i;
-
-        gridLinesH[i].color[0] = 1.0f;
-        gridLinesH[i].color[1] = 0.0f;
-        gridLinesH[i].color[2] = 0.0f;
-        gridLinesH[i].color[3] = 1.0f;
-
-        gridLinesH[i].thickness = 1.0f;
-        if(i % 6 == 0)
-            gridLinesH[i].thickness = 2.0f;
-
-        gridLinesH[i].data[0] = -1.0f;
-        gridLinesH[i].data[1] = yLevel;
-
-        gridLinesH[i].data[2] = 1.0f;
-        gridLinesH[i].data[3] = yLevel;
-    }
-    for(i = 0; i < STREAMPLOT_N_V_GRID_LINES; i++) {
-        float xLevel = -1.0f + i * 2.0f/STREAMPLOT_N_V_GRID_LINES;
-
-        gridLinesV[i].color[0] = 1.0f;
-        gridLinesV[i].color[1] = 0.0f;
-        gridLinesV[i].color[2] = 0.0f;
-        gridLinesV[i].color[3] = 1.0f;
-
-        gridLinesV[i].thickness = 1.0f;
-        if(i % 6 == 0)
-            gridLinesV[i].thickness = 2.0f;
-
-        gridLinesV[i].data[0] = xLevel;
-        gridLinesV[i].data[1] = 16384.0f;
-
-        gridLinesV[i].data[2] = xLevel;
-        gridLinesV[i].data[3] = -16384.0f;
-    }
 
     LOGI("StreamplotInit(%d, %d)", w, h);
 
@@ -485,6 +473,12 @@ void StreamplotInit(int numPlots, StreamplotType* plotTypes, int screenWidth, in
         return;
     }
 
+    gGridProgramTexture = createProgram(gridVertexShader, gridFragmentShader);
+    if (!gGridProgramTexture) {
+        LOGE("Could not create gGridProgramTexture program.");
+        return;
+    }
+
     gLineHandle = glGetAttribLocation(gProgram, "vPosition");
     checkGlError("glGetAttribLocation");
 
@@ -496,7 +490,7 @@ void StreamplotInit(int numPlots, StreamplotType* plotTypes, int screenWidth, in
 
     gPointSizeHandle = glGetUniformLocation(gProgram, "u_PointSize");
     checkGlError("glGetUniformLocation");
-
+////////////////////////////////////////////////////////////////////////////
     gTexturePositionHandle = glGetAttribLocation(gProgramTexture, "vPosition");
     checkGlError("glGetAttribLocation");
 
@@ -504,6 +498,18 @@ void StreamplotInit(int numPlots, StreamplotType* plotTypes, int screenWidth, in
     checkGlError("glGetAttribLocation");
 
     gTextureUniformSamplerHandle = glGetUniformLocation(gProgramTexture, "u_Texture");
+    checkGlError("glGetUniformLocation");
+////////////////////////////////////////////////////////////////////////////
+    gGridTexturePositionHandle = glGetAttribLocation(gGridProgramTexture, "vPosition");
+    checkGlError("glGetAttribLocation");
+
+    gGridTextureCoordinateHandle = glGetAttribLocation(gGridProgramTexture, "vCoordinate");
+    checkGlError("glGetAttribLocation");
+
+    gGridTextureUniformSamplerHandle = glGetUniformLocation(gGridProgramTexture, "u_Texture");
+    checkGlError("glGetUniformLocation");
+
+    gGridMVPHandle = glGetUniformLocation(gGridProgramTexture, "u_MVPMatrix");
     checkGlError("glGetUniformLocation");
 
     glViewport(0, 0, w, h);
@@ -627,63 +633,82 @@ static void addData(int nDataPoints, float* data) {
         }
     }
 }
+static void renderQuarterGrid(GLfloat* gridVertices) {
 
-static void renderGrid() {
-    int i;
 
-    for(i = 0; i < STREAMPLOT_N_H_GRID_LINES; i++) {
-        glUseProgram(gProgram);
-        checkGlError("glUseProgram");
+    glUseProgram(gGridProgramTexture);
+    checkGlError("glUseProgram");
 
-        glLineWidth(gridLinesH[i].thickness);
-        checkGlError("glLineWidth");
+    glActiveTexture(GL_TEXTURE0);
+    checkGlError("glActiveTexture");
 
-        glVertexAttribPointer(gLineHandle, 2, GL_FLOAT, GL_FALSE, 0, gridLinesH[i].data);
-        checkGlError("glVertexAttribPointer");
+    glBindTexture(GL_TEXTURE_2D, gGridHandle);
+    checkGlError("glBindTexture");
 
-        glEnableVertexAttribArray(gLineHandle);
-        checkGlError("glEnableVertexAttribArray");
+    glUniform1i(gGridTextureUniformSamplerHandle, 0);
+    checkGlError("glUniform1i");
 
-        glUniformMatrix4fv(gMVPHandle, 1, GL_FALSE, gMVPMatrix);
-        checkGlError("glUniformMatrix4fv");
+    glUniformMatrix4fv(gGridMVPHandle, 1, GL_FALSE, gMVPMatrix);
+    checkGlError("glUniformMatrix4fv");
 
-        glUniform1f(gPointSizeHandle, gridLinesH[i].thickness);
-        checkGlError("glUniform1f");
+    glVertexAttribPointer(gGridTexturePositionHandle, 2, GL_FLOAT, GL_FALSE, 0, gridVertices);
+    checkGlError("glVertexAttribPointer");
 
-        glUniform4fv(gColorHandle, 1, gridLinesH[i].color);
-        checkGlError("glUniform4fv");
+    glEnableVertexAttribArray(gGridTexturePositionHandle);
+    checkGlError("glEnableVertexAttribArray");
 
-        glDrawArrays(GL_LINES, 0, 2);
-        checkGlError("glDrawArrays");
-    }
+    glVertexAttribPointer(gGridTextureCoordinateHandle, 2, GL_FLOAT, GL_FALSE, 0, gridTextureVertices);
+    checkGlError("glVertexAttribPointer");
 
-    for(i = 0; i < STREAMPLOT_N_V_GRID_LINES; i++) {
-        glUseProgram(gProgram);
-        checkGlError("glUseProgram");
+    glEnableVertexAttribArray(gGridTextureCoordinateHandle);
+    checkGlError("glEnableVertexAttribArray");
 
-        glLineWidth(gridLinesV[i].thickness);
-        checkGlError("glLineWidth");
-
-        glVertexAttribPointer(gLineHandle, 2, GL_FLOAT, GL_FALSE, 0, gridLinesV[i].data);
-        checkGlError("glVertexAttribPointer");
-
-        glEnableVertexAttribArray(gLineHandle);
-        checkGlError("glEnableVertexAttribArray");
-
-        glUniformMatrix4fv(gMVPHandle, 1, GL_FALSE, gMVPMatrix);
-        checkGlError("glUniformMatrix4fv");
-
-        glUniform1f(gPointSizeHandle, gridLinesV[i].thickness);
-        checkGlError("glUniform1f");
-
-        glUniform4fv(gColorHandle, 1, gridLinesV[i].color);
-        checkGlError("glUniform4fv");
-
-        glDrawArrays(GL_LINES, 0, 2);
-        checkGlError("glDrawArrays");
-    }
-
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    checkGlError("glDrawArrays");
 }
+static void renderGrid() {
+    int N_X = 4;
+    int N_Y = 2;
+    int i, j;
+    for(i = 0; i < N_X; i++) {
+        for(j = 0; j < N_Y; j++) {
+            float startx = -1.0f + i * 1.0f/N_X;
+            float starty = -16384.0f + j * 
+            GLfloat gridVertices[] = {
+            };
+        }
+    }
+    GLfloat gridVerticesLeftTop[] = {
+        -1.0f, 0.0f,
+        0.0f, 0.0f,
+        -1.0f, 16384.0f,
+        0.0f, 16384.0f
+    };
+    GLfloat gridVerticesLeftBottom[] = {
+        -1.0f, -16384.0f,
+        0.0f, -16384.0f,
+        -1.0f, 0.0f,
+        0.0f, 0.0f
+    };
+    GLfloat gridVerticesRightTop[] = {
+        0.0f, 0.0f,
+        1.0f, 0.0f,
+        0.0f, 16384.0f,
+        1.0f, 16384.0f
+    };
+    GLfloat gridVerticesRightBottom[] = {
+        0.0f, -16384.0f,
+        1.0f, -16384.0f,
+        0.0f, 0.0f,
+        1.0f, 0.0f
+    };
+
+    renderQuarterGrid(gridVerticesLeftTop);
+    renderQuarterGrid(gridVerticesLeftBottom);
+    renderQuarterGrid(gridVerticesRightTop);
+    renderQuarterGrid(gridVerticesRightBottom);
+}
+
 
 static void renderPlayPauseButton()
 {

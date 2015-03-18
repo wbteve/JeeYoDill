@@ -46,10 +46,11 @@ public class PlatformJNIWrapper {
     }
 
     public static void StreamplotInit(Context context, int width, int height, StreamplotType[] plotTypes, Boolean showPlayPauseButton) {
-        int[] resHandles = new int[3];
+        int[] resHandles = new int[4];
         resHandles[0] = loadTexture(context, R.drawable.play_image);
         resHandles[1] = loadTexture(context, R.drawable.pause_image);
         resHandles[2] = loadTexture(context, R.drawable.font);
+        resHandles[3] = loadTexture(context, R.drawable.grid);
 
         if(showPlayPauseButton)
             init(context.getAssets(), width, height, plotTypes, 1, resHandles);
