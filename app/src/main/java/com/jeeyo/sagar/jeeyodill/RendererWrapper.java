@@ -76,7 +76,7 @@ public class RendererWrapper implements GLSurfaceView.Renderer {
     public void onSurfaceChanged(GL10 gl, int width, int height) {
         StreamplotType[] plotTypes = new StreamplotType[1];
 
-        plotTypes[0] = new StreamplotType(StreamplotType.COLOR_RED);
+        plotTypes[0] = new StreamplotType(StreamplotType.COLOR_BLACK);
         //plotTypes[1] = new StreamplotType(StreamplotType.STYLE_POINT_1, StreamplotType.COLOR_GREEN, 2.0f);
 
         PlatformJNIWrapper.StreamplotInit(mActivity, width, height, plotTypes, false);
@@ -126,8 +126,9 @@ public class RendererWrapper implements GLSurfaceView.Renderer {
             Log.d("BLE", String.valueOf(data[i]));
             processData(data[i]);
         }
-        PlatformJNIWrapper.mainLoop(data, mEvent, mEventX0, mEventY0, mEventX1, mEventY1, String.valueOf(mECGHr));
+        //PlatformJNIWrapper.mainLoop(data, mEvent, mEventX0, mEventY0, mEventX1, mEventY1, String.valueOf(mECGHr));
         //PlatformJNIWrapper.mainLoop(testData(), mEvent, mEventX0, mEventY0, mEventX1, mEventY1, "97");
+        PlatformJNIWrapper.mainLoop(testData2(), mEvent, mEventX0, mEventY0, mEventX1, mEventY1, "87");
         mEvent = 0; // clear the event
     }
 
@@ -148,6 +149,18 @@ public class RendererWrapper implements GLSurfaceView.Renderer {
                 else
                     mScale = 3.0f;
             }
+        }
+        return data;
+    }
+
+    int testIdx = 0;
+    private float[] testData2() {
+        int nPoints = 6;
+        float[] data = new float[nPoints];
+        for(int i = 0; i < nPoints; i++) {
+            data[i] = -8191 + 50.0f * (testIdx++);
+            if (testIdx == 253)
+                testIdx = 0;
         }
         return data;
     }

@@ -31,7 +31,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "streamplot.h"
 
 
-
 typedef struct Streamplot {
     GLfloat color[4];
     GLfloat thickness;
@@ -39,8 +38,16 @@ typedef struct Streamplot {
     GLint style;
 } Streamplot;
 
+typedef struct GridLine {
+    GLfloat data[4];
+    GLfloat color[4];
+    GLfloat thickness;
+} GridLine;
+
 int nPlots;
 int freeze = 0;
+int gridEnabled;
+int doubleTapCountDown;
 int width, height;
 int lastEvent;
 float initPinchEventDx = 0;
@@ -53,6 +60,8 @@ int lastFreeze;
 int ptr;
 
 Streamplot plots[STREAMPLOT_N_MAX_PLOTS];
+GridLine gridLinesH[STREAMPLOT_N_H_GRID_LINES];
+GridLine gridLinesV[STREAMPLOT_N_V_GRID_LINES];
 
 GLfloat gMVPMatrix[16] = {
         1.0f, 0.0f, 0.0f, 0.0f,
@@ -224,16 +233,12 @@ static void setYScale() {
         }
         tranY = -1.0f * scaleY * avg;
     }
-    LOGI("scaleY: %f", scaleY);
-    LOGI("tranY: %f", tranY);
-    LOGI("minVal: %f", minVal);
-    LOGI("maxVal: %f", maxVal);
     gMVPMatrix[5] = scaleY;
     gMVPMatrix[13] = tranY;
 }
 
 static void clearScreen() {
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     checkGlError("glClearColor");
 
     glClear( GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
@@ -371,6 +376,8 @@ void StreamplotInit(int numPlots, StreamplotType* plotTypes, int screenWidth, in
     // Init global vars
     freeze = 0;
     lastEvent = 0;
+    doubleTapCountDown = 0;
+    gridEnabled = 1;
     initPinchEventDx = 0;
     initPinchEventX = 0;
     lastTranX = 0.0f;
@@ -426,6 +433,42 @@ void StreamplotInit(int numPlots, StreamplotType* plotTypes, int screenWidth, in
             plots[i].data[4*j + 2] = -1.0f + ((j+1) * 2.0f) / STREAMPLOT_N_MAX_POINTS;
             plots[i].data[4*j + 3] = 0.0f;
         }
+    }
+    for(i = 0; i < STREAMPLOT_N_H_GRID_LINES; i++) {
+        float yLevel = -16384.0f + (32768.0f/STREAMPLOT_N_H_GRID_LINES) * i;
+
+        gridLinesH[i].color[0] = 1.0f;
+        gridLinesH[i].color[1] = 0.0f;
+        gridLinesH[i].color[2] = 0.0f;
+        gridLinesH[i].color[3] = 1.0f;
+
+        gridLinesH[i].thickness = 1.0f;
+        if(i % 6 == 0)
+            gridLinesH[i].thickness = 2.0f;
+
+        gridLinesH[i].data[0] = -1.0f;
+        gridLinesH[i].data[1] = yLevel;
+
+        gridLinesH[i].data[2] = 1.0f;
+        gridLinesH[i].data[3] = yLevel;
+    }
+    for(i = 0; i < STREAMPLOT_N_V_GRID_LINES; i++) {
+        float xLevel = -1.0f + i * 2.0f/STREAMPLOT_N_V_GRID_LINES;
+
+        gridLinesV[i].color[0] = 1.0f;
+        gridLinesV[i].color[1] = 0.0f;
+        gridLinesV[i].color[2] = 0.0f;
+        gridLinesV[i].color[3] = 1.0f;
+
+        gridLinesV[i].thickness = 1.0f;
+        if(i % 6 == 0)
+            gridLinesV[i].thickness = 2.0f;
+
+        gridLinesV[i].data[0] = xLevel;
+        gridLinesV[i].data[1] = 16384.0f;
+
+        gridLinesV[i].data[2] = xLevel;
+        gridLinesV[i].data[3] = -16384.0f;
     }
 
     LOGI("StreamplotInit(%d, %d)", w, h);
@@ -558,6 +601,10 @@ static void processEvents(StreamplotEvent evt) {
            ((showPlayPause && evt.eventX0/width < 0.2 && evt.eventY0/height > 0.8) || !showPlayPause))
         {
             freeze = !freeze;
+            if(doubleTapCountDown > 0) {
+                gridEnabled = !gridEnabled;
+            }
+            doubleTapCountDown = 25;
         }
         lastEvent = evt.event;
     }
@@ -579,6 +626,63 @@ static void addData(int nDataPoints, float* data) {
             }
         }
     }
+}
+
+static void renderGrid() {
+    int i;
+
+    for(i = 0; i < STREAMPLOT_N_H_GRID_LINES; i++) {
+        glUseProgram(gProgram);
+        checkGlError("glUseProgram");
+
+        glLineWidth(gridLinesH[i].thickness);
+        checkGlError("glLineWidth");
+
+        glVertexAttribPointer(gLineHandle, 2, GL_FLOAT, GL_FALSE, 0, gridLinesH[i].data);
+        checkGlError("glVertexAttribPointer");
+
+        glEnableVertexAttribArray(gLineHandle);
+        checkGlError("glEnableVertexAttribArray");
+
+        glUniformMatrix4fv(gMVPHandle, 1, GL_FALSE, gMVPMatrix);
+        checkGlError("glUniformMatrix4fv");
+
+        glUniform1f(gPointSizeHandle, gridLinesH[i].thickness);
+        checkGlError("glUniform1f");
+
+        glUniform4fv(gColorHandle, 1, gridLinesH[i].color);
+        checkGlError("glUniform4fv");
+
+        glDrawArrays(GL_LINES, 0, 2);
+        checkGlError("glDrawArrays");
+    }
+
+    for(i = 0; i < STREAMPLOT_N_V_GRID_LINES; i++) {
+        glUseProgram(gProgram);
+        checkGlError("glUseProgram");
+
+        glLineWidth(gridLinesV[i].thickness);
+        checkGlError("glLineWidth");
+
+        glVertexAttribPointer(gLineHandle, 2, GL_FLOAT, GL_FALSE, 0, gridLinesV[i].data);
+        checkGlError("glVertexAttribPointer");
+
+        glEnableVertexAttribArray(gLineHandle);
+        checkGlError("glEnableVertexAttribArray");
+
+        glUniformMatrix4fv(gMVPHandle, 1, GL_FALSE, gMVPMatrix);
+        checkGlError("glUniformMatrix4fv");
+
+        glUniform1f(gPointSizeHandle, gridLinesV[i].thickness);
+        checkGlError("glUniform1f");
+
+        glUniform4fv(gColorHandle, 1, gridLinesV[i].color);
+        checkGlError("glUniform4fv");
+
+        glDrawArrays(GL_LINES, 0, 2);
+        checkGlError("glDrawArrays");
+    }
+
 }
 
 static void renderPlayPauseButton()
@@ -616,6 +720,9 @@ static void renderPlayPauseButton()
 
 void StreamplotMainLoop(int nDataPoints, float* data, StreamplotEvent evt, char* strLeftTop)
 {
+    if(doubleTapCountDown > 0)
+        doubleTapCountDown--;
+
     processEvents(evt);
 
     addData(nDataPoints, data);
@@ -623,6 +730,10 @@ void StreamplotMainLoop(int nDataPoints, float* data, StreamplotEvent evt, char*
     setYScale();
 
     clearScreen();
+
+    if(gridEnabled)
+        renderGrid();
+
     renderPlots();
 
     if(showPlayPause)

@@ -67,6 +67,9 @@ extern "C" {
 #define STREAMPLOT_EVENT_UP 2
 #define STREAMPLOT_EVENT_PINCH 3
 
+#define STREAMPLOT_N_H_GRID_LINES 110
+#define STREAMPLOT_N_V_GRID_LINES 100
+
 typedef struct StreamplotType {
     GLfloat color[4];
     GLfloat thickness;

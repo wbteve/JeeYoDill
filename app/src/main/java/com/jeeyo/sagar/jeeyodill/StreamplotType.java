@@ -37,6 +37,7 @@ public class StreamplotType {
     public static final int COLOR_GREEN = 2;
     public static final int COLOR_YELLOW = 3;
     public static final int COLOR_RED = 4;
+    public static final int COLOR_BLACK = 5;
 
     public static final int STYLE_LINE_1 = 1;
     public static final int STYLE_POINT_1 = 2;
@@ -100,6 +101,12 @@ public class StreamplotType {
                 mColorR = 1.0f;
                 mColorG = 0.733f;
                 mColorB = 0.2f;
+                break;
+
+            case COLOR_BLACK:
+                mColorR = 0.0f;
+                mColorG = 0.0f;
+                mColorB = 0.0f;
                 break;
 
             default:
