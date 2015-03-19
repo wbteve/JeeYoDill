@@ -377,8 +377,8 @@ void StreamplotInit(int numPlots, StreamplotType* plotTypes, int screenWidth, in
     initPinchEventX = 0;
     lastTranX = 0.0f;
     lastScaleX = 0.0f;
-    startPtr = STREAMPLOT_N_MAX_POINTS/2 - 400;
-    endPtr = STREAMPLOT_N_MAX_POINTS/2 + 400;
+    startPtr = STREAMPLOT_N_MAX_POINTS/2 - 600;
+    endPtr = STREAMPLOT_N_MAX_POINTS/2 + 600;
     showPlayPause = 0;
     for(i = 0; i < 16; i++) {
         gMVPMatrix[i] = 0.0f;
